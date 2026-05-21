@@ -4,8 +4,9 @@ import { useDispatch } from 'react-redux';
 import { loginFailure, loginStart, loginSuccess } from '../../../app/store/slices/authSlice';
 import { authApi } from '../../../api/api';
 import { getWorkspacePathForRole } from '../../../utils/roles';
-import { Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react';
-import Logo from '../../../components/Logo';
+import { Eye, EyeOff, LockKeyhole, Mail, Sparkles, UserRound } from 'lucide-react';
+import AuthRadarPreview from '../../../components/AuthRadarPreview';
+import PublicNavbar from '../../../components/PublicNavbar';
 import '../Login/Login.css';
 
 const Signup = () => {
@@ -44,7 +45,7 @@ const Signup = () => {
       setError('Passwords do not match.');
       return;
     }
-    
+
     if (!terms) {
       setError('Please accept the terms and policy.');
       return;
@@ -73,38 +74,28 @@ const Signup = () => {
   };
 
   return (
-    <div className="auth-container auth-container--signup">
-      <main className="auth-shell">
-        <section className="auth-brand-panel" aria-label="Blue Horizon">
-          <div className="auth-brand-content">
-            <div className="auth-logo-lockup">
-              <div className="auth-logo-mark">
-                <Logo size={58} className="auth-logo-icon" />
-              </div>
-              <div>
-                <span className="auth-brand-name">BLUE HORIZON</span>
-                <span className="auth-brand-subtitle">Strategic foresight workspace</span>
-              </div>
-            </div>
+    <div className="auth-container auth-container--login auth-container--signup-modern">
+      <PublicNavbar />
 
-            <div className="auth-horizon-visual" aria-hidden="true">
-              <div className="auth-horizon-orbit">
-                <span className="auth-horizon-line" />
-                <span className="auth-horizon-line" />
-                <span className="auth-horizon-line" />
-                <span className="auth-horizon-node" />
-                <span className="auth-horizon-node" />
-                <span className="auth-horizon-node" />
-              </div>
-            </div>
+      <main className="auth-login-hero auth-signup-hero">
+        <div className="auth-login-hero-bg" aria-hidden="true" />
+        <div className="auth-login-layout">
+          <section className="auth-login-copy" aria-label="Blue Horizon account introduction">
+            <h1 className="auth-login-title">
+              Create your<br />
+              <em>Foresight Workspace</em>
+            </h1>
+            <p className="auth-login-subtitle">
+              Start curating signals, coordinating workshops, and turning uncertainty into strategic clarity.
+            </p>
+            <AuthRadarPreview
+              title="Workspace signal map"
+              description="A clean view for scanning and workshop planning."
+            />
+          </section>
 
-            <p className="auth-brand-caption">Build a clearer view of what comes next.</p>
-          </div>
-        </section>
-
-        <section className="auth-form-panel" aria-label="Sign up">
-          <div className="auth-form-card">
-            <div className="auth-switch">
+          <section className="auth-login-card auth-signup-card" aria-label="Sign up">
+            <div className="auth-login-card-switch">
               <span>Already joined?</span>
               <Link to="/login" className="auth-link">Log in</Link>
             </div>
@@ -216,12 +207,22 @@ const Signup = () => {
               {error && <div className="auth-error">{error}</div>}
 
               <button type="submit" className="auth-button" disabled={saving}>
+                <Sparkles size={17} aria-hidden="true" />
                 <span>{saving ? 'Creating account...' : 'Create account'}</span>
               </button>
             </form>
 
-          </div>
-        </section>
+          </section>
+        </div>
+
+        <div className="auth-login-wave" aria-hidden="true">
+          <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+            <path
+              d="M0,60 C360,120 1080,0 1440,60 L1440,120 L0,120 Z"
+              fill="#f5f7fa"
+            />
+          </svg>
+        </div>
       </main>
     </div>
   );

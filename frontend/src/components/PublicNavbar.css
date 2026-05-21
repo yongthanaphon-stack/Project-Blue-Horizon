@@ -1,0 +1,131 @@
+.home-navbar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  padding: 0 24px;
+  border-bottom: 1px solid #edf1f6;
+  background: #ffffff;
+}
+
+.home-navbar-inner {
+  max-width: 1200px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto;
+}
+
+.home-navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.home-navbar-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-navbar-brand-name {
+  color: #124599;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.home-navbar-brand-sub {
+  color: #6b7280;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.home-navbar-links {
+  display: flex;
+  gap: 28px;
+}
+
+.home-navbar-link {
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.home-navbar-link:hover {
+  color: #124599;
+}
+
+.home-navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.home-navbar-btn-signup {
+  padding: 8px 20px;
+  border-radius: 6px;
+  background: #2f80ed;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.home-navbar-btn-signup:hover {
+  background: #1d6edb;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .home-navbar-links {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .home-navbar {
+    padding: 0 16px;
+  }
+
+  .home-navbar-inner {
+    height: 68px;
+  }
+
+  .home-navbar-brand {
+    gap: 8px;
+  }
+
+  .home-navbar-brand svg,
+  .home-navbar-brand img {
+    max-width: 54px;
+  }
+
+  .home-navbar-brand-name {
+    font-size: 1rem;
+  }
+
+  .home-navbar-brand-sub {
+    font-size: 0.5rem;
+  }
+
+  .home-navbar-actions {
+    gap: 12px;
+  }
+
+  .home-navbar-actions .home-navbar-link {
+    display: none;
+  }
+
+  .home-navbar-btn-signup {
+    padding: 7px 14px;
+  }
+}

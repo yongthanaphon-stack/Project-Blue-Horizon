@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Search,
   TrendingUp,
@@ -12,12 +12,12 @@ import {
   RefreshCw,
   ThumbsUp,
 } from 'lucide-react';
-import { useAuth } from '../../hooks/useAuth';
 import { useSignalSuggestions } from '../../hooks/useSignalSuggestions';
 import { publicSignalsApi } from '../../api/api';
 import { truncateText } from '../../utils/text';
 import SignalSearchSuggestions from '../../components/Signals/SignalSearchSuggestions';
 import Logo from '../../components/Logo';
+import PublicNavbar from '../../components/PublicNavbar';
 import './Home.css';
 
 /* Inline brand SVG icons (not available in this lucide-react version) */
@@ -213,7 +213,7 @@ function ImpactScoreBadge({ score }) {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { isAuthenticated, logoutUser, workspacePath } = useAuth();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const [featuredSignals, setFeaturedSignals] = useState(FEATURED_SIGNAL_FALLBACKS);
@@ -228,6 +228,14 @@ export default function Home() {
     const frame = requestAnimationFrame(() => setIsVisible(true));
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    if (!location.hash) return;
+    const frame = requestAnimationFrame(() => {
+      document.getElementById(location.hash.slice(1))?.scrollIntoView({ block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [location.hash]);
 
   const loadFeaturedSignals = useCallback(async () => {
     setFeaturedLoading(true);
@@ -269,11 +277,6 @@ export default function Home() {
     return () => { isMounted = false; };
   }, []);
 
-  function handleLogout() {
-    logoutUser();
-    navigate('/login', { replace: true });
-  }
-
   function runSearch(value) {
     navigate(buildSignalSearchPath(value));
   }
@@ -291,39 +294,7 @@ export default function Home() {
 
   return (
     <div className="home-page">
-      {/* Navigation Bar */}
-      <nav className="home-navbar">
-        <div className="home-navbar-inner">
-          <Link to="/" className="home-navbar-brand">
-            <Logo size={70} style={{ marginRight: '12px' }} />
-            <div className="home-navbar-brand-text">
-              <span className="home-navbar-brand-name">Blue Horizon</span>
-              <span className="home-navbar-brand-sub">STRATEGIC FORESIGHT</span>
-            </div>
-          </Link>
-
-          <div className="home-navbar-links">
-            <Link to="/signals" className="home-navbar-link">Signal Bank</Link>
-            <Link to="/workshop" className="home-navbar-link">Workshop</Link>
-          </div>
-
-          <div className="home-navbar-actions">
-            {isAuthenticated ? (
-              <>
-                <Link to={workspacePath} className="home-navbar-btn-signup">Open Workspace</Link>
-                <button type="button" className="btn btn-secondary" onClick={handleLogout}>
-                  Log Out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to="/login" className="home-navbar-link">Log In</Link>
-                <Link to="/signup" className="home-navbar-btn-signup">Sign Up</Link>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <PublicNavbar />
 
       {/* Hero Section */}
       <section className={`home-hero ${isVisible ? 'home-hero--visible' : ''}`}>
@@ -390,7 +361,7 @@ export default function Home() {
       </section>
 
       {/* Signal Domain Section */}
-      <section className="home-section home-domains-section">
+      <section id="signal-bank" className="home-section home-domains-section">
         <div className="home-section-container">
           <div className="home-section-header">
             <div>
@@ -426,7 +397,7 @@ export default function Home() {
       </section>
 
       {/* Platform Stats Section */}
-      <section className="home-section home-stats-section">
+      <section id="workshop" className="home-section home-stats-section">
         <div className="home-section-container">
           <h2 className="home-stats-title">Platform at a Glance</h2>
           <p className="home-stats-subtitle">

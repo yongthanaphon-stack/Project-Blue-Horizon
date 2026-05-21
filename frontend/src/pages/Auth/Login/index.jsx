@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginFailure, loginStart, loginSuccess } from '../../../app/store/slices/authSlice';
 import { authApi } from '../../../api/api';
 import { clearRedirectPath } from '../../../utils/authStorage';
-import { Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
-import Logo from '../../../components/Logo';
+import { Eye, EyeOff, LockKeyhole, Mail, Sparkles } from 'lucide-react';
+import { getWorkspacePathForRole } from '../../../utils/roles';
+import AuthRadarPreview from '../../../components/AuthRadarPreview';
+import PublicNavbar from '../../../components/PublicNavbar';
 import './Login.css';
 
 const Login = () => {
@@ -16,7 +18,11 @@ const Login = () => {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
+  const redirectTo = typeof location.state?.from === 'string' && location.state.from.startsWith('/')
+    ? location.state.from
+    : null;
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -34,7 +40,7 @@ const Login = () => {
       const res = await authApi.login({ email: normalizedEmail, password });
       dispatch(loginSuccess(res.data));
       clearRedirectPath();
-      navigate('/', { replace: true });
+      navigate(redirectTo || getWorkspacePathForRole(res.data.user?.role), { replace: true });
     } catch (err) {
       const message = err.response?.data?.message || 'Unable to sign in. Please try again.';
       setError(message);
@@ -46,44 +52,31 @@ const Login = () => {
 
   return (
     <div className="auth-container auth-container--login">
-      <main className="auth-shell">
-        <section className="auth-brand-panel" aria-label="Blue Horizon">
-          <div className="auth-brand-content">
-            <div className="auth-logo-lockup">
-              <div className="auth-logo-mark">
-                <Logo size={58} className="auth-logo-icon" />
-              </div>
-              <div>
-                <span className="auth-brand-name">BLUE HORIZON</span>
-                <span className="auth-brand-subtitle">Strategic foresight workspace</span>
-              </div>
-            </div>
+      <PublicNavbar />
 
-            <div className="auth-horizon-visual" aria-hidden="true">
-              <div className="auth-horizon-orbit">
-                <span className="auth-horizon-line" />
-                <span className="auth-horizon-line" />
-                <span className="auth-horizon-line" />
-                <span className="auth-horizon-node" />
-                <span className="auth-horizon-node" />
-                <span className="auth-horizon-node" />
-              </div>
-            </div>
+      <main className="auth-login-hero">
+        <div className="auth-login-hero-bg" aria-hidden="true" />
+        <div className="auth-login-layout">
+          <section className="auth-login-copy" aria-label="Blue Horizon login introduction">
+            <h1 className="auth-login-title">
+              Unlock the Power of<br />
+              <em>Strategic Foresight</em>
+            </h1>
+            <p className="auth-login-subtitle">
+              Log in to continue scanning signals, building workshops, and turning foresight into strategic action.
+            </p>
+            <AuthRadarPreview />
+          </section>
 
-            <p className="auth-brand-caption">Navigate the horizon with clarity.</p>
-          </div>
-        </section>
-
-        <section className="auth-form-panel" aria-label="Log in">
-          <div className="auth-form-card">
-            <div className="auth-switch">
+          <section className="auth-login-card" aria-label="Log in">
+            <div className="auth-login-card-switch">
               <span>New here?</span>
               <Link to="/signup" className="auth-link">Create account</Link>
             </div>
 
             <div className="auth-header">
               <h2>Welcome to Blue Horizon</h2>
-              <p>Log in to continue to your Blue Horizon workspace.</p>
+              <p>Use your Blue Horizon account to enter the foresight workspace.</p>
             </div>
 
             <form onSubmit={handleLogin} className="auth-form">
@@ -148,12 +141,21 @@ const Login = () => {
               {error && <div className="auth-error">{error}</div>}
 
               <button type="submit" className="auth-button" disabled={saving}>
-                <span>{saving ? 'Logging in...' : 'Log in'}</span>
+                <Sparkles size={17} aria-hidden="true" />
+                <span>{saving ? 'Connecting...' : 'Log in'}</span>
               </button>
             </form>
+          </section>
+        </div>
 
-          </div>
-        </section>
+        <div className="auth-login-wave" aria-hidden="true">
+          <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+            <path
+              d="M0,60 C360,120 1080,0 1440,60 L1440,120 L0,120 Z"
+              fill="#f5f7fa"
+            />
+          </svg>
+        </div>
       </main>
     </div>
   );
