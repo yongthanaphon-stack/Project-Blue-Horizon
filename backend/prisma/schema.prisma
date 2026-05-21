@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SignalStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ImpactLevel {
+  GLOBAL
+  REGION
+  COUNTRY
+}
+
+enum TimeHorizon {
+  H1
+  H2
+  H3
+}
+
+enum PestelCategory {
+  POLITICAL
+  ECONOMIC
+  SOCIAL
+  TECHNOLOGICAL
+  ENVIRONMENTAL
+  LEGAL
+}
+
+enum UserRole {
+  ANALYST
+  LEAD_ANALYST
+  ADMIN
+  ADMIN_SYSTEM
+}
+
+enum NotificationType {
+  SIGNAL_NEEDS_VOTE
+  SIGNAL_VOTE_RECEIVED
+  SIGNAL_UPDATED
+  WORKSHOP_CREATED
+  WORKSHOP_REMINDER
+  SCENARIO_CREATED
+  SCENARIO_SELECTED
+  SWOT_UPDATED
+  DAILY_SUMMARY
+  SYSTEM_ANNOUNCEMENT
+}
+
+model User {
+  id                     Int                   @id @default(autoincrement())
+  name                   String
+  email                  String                @unique
+  passwordHash           String                @default("")
+  role                   UserRole              @default(ANALYST)
+  avatar                 String?
+  preferredFont          String                @default("google-sans-flex")
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  votes                  SignalVote[]
+  workshopParticipations WorkshopParticipant[]
+  ownedSignals           Signal[]              @relation("SignalOwner")
+  signalHistories        SignalHistory[]
+  notifications           Notification[]        @relation("NotificationRecipient")
+  notificationsAuthored   Notification[]        @relation("NotificationActor")
+  notificationPreference  NotificationPreference?
+}
+
+model Signal {
+  id               Int               @id @default(autoincrement())
+  name             String
+  shortDetails     String?
+  description      String
+  referenceSource  String?
+  tags             String[]
+  pestelCategories PestelCategory[]
+  stakeholders     String[]
+  impactLevel      ImpactLevel       @default(GLOBAL)
+  timeHorizon      TimeHorizon       @default(H1)
+  impactScore      Float             @default(0)
+  status           SignalStatus      @default(DRAFT)
+  totalVotes       Int               @default(0)
+  isGlobal         Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  ownerId          Int?
+  owner            User?             @relation("SignalOwner", fields: [ownerId], references: [id])
+  workshopId       Int?
+  workshop         Workshop?         @relation("WorkshopSignals", fields: [workshopId], references: [id])
+  votes            SignalVote[]
+  references       ReferenceSource[]
+  scenarios        Scenario[]        @relation("ScenarioSignals")
+  histories        SignalHistory[]
+}
+
+model SignalVote {
+  id        Int      @id @default(autoincrement())
+  score     Int
+  signalId  Int
+  userId    Int
+  signal    Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([signalId, userId])
+}
+
+model SignalHistory {
+  id        Int      @id @default(autoincrement())
+  action    String
+  changes   String?
+  signalId  Int
+  signal    Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model ReferenceSource {
+  id       Int    @id @default(autoincrement())
+  title    String
+  url      String
+  signalId Int
+  signal   Signal @relation(fields: [signalId], references: [id], onDelete: Cascade)
+}
+
+model Workshop {
+  id           Int                   @id @default(autoincrement())
+  name         String
+  description  String?
+  horizon      TimeHorizon           @default(H1)
+  isActive     Boolean               @default(true)
+  lastActive   DateTime              @default(now())
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  participants WorkshopParticipant[]
+  scenarios    Scenario[]
+  outputs      WorkshopOutput[]
+  signals      Signal[]              @relation("WorkshopSignals")
+}
+
+model WorkshopParticipant {
+  id         Int      @id @default(autoincrement())
+  workshopId Int
+  userId     Int
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workshopId, userId])
+}
+
+model WorkshopOutput {
+  id         Int      @id @default(autoincrement())
+  name       String
+  type       String
+  createdBy  String
+  date       DateTime @default(now())
+  workshopId Int
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+}
+
+model Scenario {
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String
+  focus        String?
+  probability  String?
+  milestone    String?
+  keyDrivers   String[]
+  imageUrl     String?
+  isSelected   Boolean       @default(false)
+  workshopId   Int
+  workshop     Workshop      @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  swotAnalysis SwotAnalysis?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  signals      Signal[]      @relation("ScenarioSignals")
+}
+
+model SwotAnalysis {
+  id            Int      @id @default(autoincrement())
+  strengths     String[]
+  weaknesses    String[]
+  opportunities String[]
+  threats       String[]
+  scenarioId    Int      @unique
+  scenario      Scenario @relation(fields: [scenarioId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Notification {
+  id         Int              @id @default(autoincrement())
+  type       NotificationType
+  title      String
+  message    String
+  href       String?
+  metadata   Json?
+  readAt     DateTime?
+  archivedAt DateTime?
+  userId     Int
+  user       User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actorId    Int?
+  actor      User?            @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([userId, readAt, archivedAt, createdAt])
+  @@index([type, createdAt])
+}
+
+model NotificationPreference {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inAppEnabled        Boolean  @default(true)
+  emailEnabled        Boolean  @default(false)
+  dailySummary        Boolean  @default(true)
+  signalVotes         Boolean  @default(true)
+  signalNeedsVote     Boolean  @default(true)
+  workshopReminders   Boolean  @default(true)
+  scenarioUpdates     Boolean  @default(true)
+  swotUpdates         Boolean  @default(true)
+  systemAnnouncements Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
