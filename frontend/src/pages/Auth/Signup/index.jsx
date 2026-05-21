@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { loginFailure, loginStart, loginSuccess } from '../../../app/store/slices/authSlice';
 import { authApi } from '../../../api/api';
 import { getWorkspacePathForRole } from '../../../utils/roles';
-import { Eye, EyeOff, LockKeyhole, Mail, Sparkles, UserRound } from 'lucide-react';
+import { Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react';
 import AuthRadarPreview from '../../../components/AuthRadarPreview';
 import PublicNavbar from '../../../components/PublicNavbar';
 import '../Login/Login.css';
@@ -207,7 +207,6 @@ const Signup = () => {
               {error && <div className="auth-error">{error}</div>}
 
               <button type="submit" className="auth-button" disabled={saving}>
-                <Sparkles size={17} aria-hidden="true" />
                 <span>{saving ? 'Creating account...' : 'Create account'}</span>
               </button>
             </form>
