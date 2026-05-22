@@ -30,6 +30,7 @@ export default function SelectedScenario() {
     stateScenarios.map(createScenarioViewModel)
   ));
   const [isLoading, setIsLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -68,7 +69,13 @@ export default function SelectedScenario() {
         if (!isMounted) return;
         setWorkshop(response.data);
       } catch (error) {
-        console.error('Failed to load workshop details.', error);
+        if (!isMounted) return;
+        
+        if (error?.response?.status === 403) {
+          setAccessDenied(true);
+        } else {
+          console.error('Failed to load workshop details.', error);
+        }
       }
     }
 
@@ -99,6 +106,20 @@ export default function SelectedScenario() {
   function openSwotAnalysis(scenario) {
     if (!scenario) return;
     navigate(`/workshop/${workshopId || 1}/scenarios/${scenario.id}/swot`);
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="selected-scenario-page">
+        <section className="selected-scenario-empty">
+          <h2>Access Denied</h2>
+          <p>You do not have permission to access this workshop session. Only invited participants can join.</p>
+          <Link to="/workshop">
+            Back to Workshops
+          </Link>
+        </section>
+      </div>
+    );
   }
 
   return (

@@ -408,6 +408,7 @@ export default function ScenarioGeneration() {
   const [isScenarioLocked, setIsScenarioLocked] = useState(false);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [detailScenario, setDetailScenario] = useState(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -420,7 +421,13 @@ export default function ScenarioGeneration() {
         if (!isMounted) return;
         setWorkshop(response.data);
       } catch (error) {
-        console.error('Failed to load workshop details.', error);
+        if (!isMounted) return;
+        
+        if (error?.response?.status === 403) {
+          setAccessDenied(true);
+        } else {
+          console.error('Failed to load workshop details.', error);
+        }
       }
     }
 
@@ -570,6 +577,22 @@ export default function ScenarioGeneration() {
       ? `UPDATE (${selectedScenarioCount})`
       : `SAVE (${selectedScenarioCount})`;
     headerActionAriaLabel = `Save ${selectedScenarioCount} selected scenarios`;
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="scenario-ref-page">
+        <div className="scenario-ref-content">
+          <section className="radar-empty-state exact-radar-empty" style={{ margin: '60px 0' }}>
+            <strong>Access Denied</strong>
+            <span>You do not have permission to access this workshop session. Only invited participants can join.</span>
+            <Link to="/workshop" className="btn btn-primary" style={{ marginTop: '16px' }}>
+              Back to Workshops
+            </Link>
+          </section>
+        </div>
+      </div>
+    );
   }
 
   if (detailScenario) {

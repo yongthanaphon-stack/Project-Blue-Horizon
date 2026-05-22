@@ -32,6 +32,7 @@ export default function SwotAnalysis() {
   const [workshop, setWorkshop] = useState(null);
   const [scenario, setScenario] = useState(INITIAL_SCENARIO);
   const [swot, setSwot] = useState(() => normalizeSwot());
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -44,7 +45,13 @@ export default function SwotAnalysis() {
         if (!isMounted) return;
         setWorkshop(response.data);
       } catch (error) {
-        console.error('Failed to load workshop details.', error);
+        if (!isMounted) return;
+        
+        if (error?.response?.status === 403) {
+          setAccessDenied(true);
+        } else {
+          console.error('Failed to load workshop details.', error);
+        }
       }
     }
 
@@ -134,6 +141,20 @@ export default function SwotAnalysis() {
       color: 'var(--color-danger)', placeholder: 'Add threat...',
     },
   ];
+
+  if (accessDenied) {
+    return (
+      <div className="swot-page">
+        <div className="radar-empty-state exact-radar-empty" style={{ margin: '60px 0' }}>
+          <strong>Access Denied</strong>
+          <span>You do not have permission to access this workshop session. Only invited participants can join.</span>
+          <Link to="/workshop" className="btn btn-primary" style={{ marginTop: '16px' }}>
+            Back to Workshops
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="swot-page">

@@ -553,6 +553,7 @@ export default function EnvironmentalScan() {
     horizon: 'H2',
   });
   const [workshop, setWorkshop] = useState(null);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   const workshopParticipants = useMemo(() => {
     if (workshop?.participants?.length) {
@@ -580,7 +581,13 @@ export default function EnvironmentalScan() {
         if (!isMounted) return;
         setWorkshop(response.data);
       } catch (error) {
-        console.error('Failed to load workshop details.', error);
+        if (!isMounted) return;
+        
+        if (error?.response?.status === 403) {
+          setAccessDenied(true);
+        } else {
+          console.error('Failed to load workshop details.', error);
+        }
       }
     }
 
@@ -731,6 +738,24 @@ export default function EnvironmentalScan() {
 
   function handleResetZoom() {
     setZoom(1);
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="environmental-scan-page exact-environmental-page">
+        <div className="exact-environmental-workspace">
+          <section className="exact-radar-stage">
+            <div className="radar-empty-state exact-radar-empty">
+              <strong>Access Denied</strong>
+              <span>You do not have permission to access this workshop session. Only invited participants can join.</span>
+              <Link to="/workshop" className="btn btn-primary" style={{ marginTop: '16px' }}>
+                Back to Workshops
+              </Link>
+            </div>
+          </section>
+        </div>
+      </div>
+    );
   }
 
   return (

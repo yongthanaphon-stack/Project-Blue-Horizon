@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreateWorkshopDto } from './dto/workshop.dto';
@@ -36,6 +36,21 @@ export class WorkshopsService {
         outputs: { orderBy: { date: 'desc' } },
       },
     });
+  }
+
+  async findOneWithAccess(id: number, userId: number) {
+    const workshop = await this.findOne(id);
+
+    if (!workshop) {
+      return null;
+    }
+
+    const isParticipant = workshop.participants?.some(p => p.userId === userId);
+    if (!isParticipant) {
+      throw new ForbiddenException('You do not have access to this workshop session');
+    }
+
+    return workshop;
   }
 
   async create(data: CreateWorkshopDto, actorId?: number) {

@@ -23,8 +23,11 @@ export class WorkshopsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.workshopsService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.workshopsService.findOneWithAccess(id, req.user.id);
   }
 
   @Post()
