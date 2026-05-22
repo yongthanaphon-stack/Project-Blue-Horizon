@@ -664,11 +664,8 @@ export default function ScenarioGeneration() {
                 <h2>Selected Scenarios</h2>
               </div>
 
-              <button
-                type="button"
-                className={`scenario-ref-selection-action ${selectedScenarioCount ? 'active' : ''}`}
-                onClick={scrollToScenarioRecommendations}
-                disabled={isSelectionLockedForUser}
+              <div
+                className={`scenario-ref-selection-action ${selectedScenarioCount ? 'active' : ''} ${isSelectionLockedForUser ? 'disabled' : ''}`}
               >
                 {isSelectionLockedForUser
                   ? <Lock size={16} />
@@ -682,7 +679,7 @@ export default function ScenarioGeneration() {
                       ? `${selectedScenarioCount} in scenario set`
                       : 'Add scenarios to set'}
                 </span>
-              </button>
+              </div>
             </div>
             <SelectedScenarioBox
               scenarios={selectedScenarios}

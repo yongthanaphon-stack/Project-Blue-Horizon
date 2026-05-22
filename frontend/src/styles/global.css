@@ -7766,34 +7766,20 @@ button.ws-new-btn {
   font-weight: 850;
   letter-spacing: 0;
   white-space: nowrap;
-  cursor: pointer;
-  box-shadow: 0 9px 18px rgba(15, 23, 42, 0.05);
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  cursor: default;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02);
 }
 
-.scenario-ref-selection-action:hover:not(:disabled) {
-  transform: translateY(-1px);
-  border-color: #0047a8;
-  background: #f6f9ff;
-  box-shadow: 0 12px 24px rgba(0, 71, 168, 0.13);
-}
-
-.scenario-ref-selection-action:focus-visible {
-  outline: 3px solid rgba(47, 109, 246, 0.22);
-  outline-offset: 3px;
-}
 
 .scenario-ref-selection-action.active {
   border-color: #b7cae6;
   background: #eaf2ff;
 }
 
-.scenario-ref-selection-action:disabled {
+.scenario-ref-selection-action.disabled {
   border-color: #d8e2f0;
   background: #f5f7fb;
   color: #8391a7;
-  box-shadow: none;
-  cursor: not-allowed;
 }
 
 .scenario-ref-selected {
