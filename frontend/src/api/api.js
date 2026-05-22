@@ -57,6 +57,10 @@ export const adminUsersApi = {
   delete: (id) => api.delete(`/admin/users/${id}`),
 };
 
+export const usersApi = {
+  getDirectory: (params) => api.get('/users/directory', { params }),
+};
+
 export const publicSignalsApi = {
   getFeatured: (params) => api.get('/public/signals/featured', { params }),
   getSuggestions: (params) => api.get('/public/signals/suggestions', { params }),

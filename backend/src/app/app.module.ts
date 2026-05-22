@@ -9,6 +9,7 @@ import { ProfileModule } from '../modules/profile/profile.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AdminUsersModule } from '../modules/admin-users/admin-users.module';
 import { NotificationsModule } from '../modules/notifications/notifications.module';
+import { UsersModule } from '../modules/users/users.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -24,6 +25,7 @@ import { AppService } from './app.service';
     ProfileModule,
     AdminUsersModule,
     NotificationsModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -19,6 +19,7 @@ export function connectNotificationSocket(handlers = {}) {
   socket.on('notification:read', handlers.onNotificationRead || (() => {}));
   socket.on('notifications:read-all', handlers.onAllNotificationsRead || (() => {}));
   socket.on('notification:archived', handlers.onNotificationArchived || (() => {}));
+  socket.on('users:presence', handlers.onPresenceUpdate || (() => {}));
   socket.on('connect_error', handlers.onConnectError || (() => {}));
   socket.on('disconnect', handlers.onDisconnected || (() => {}));
 

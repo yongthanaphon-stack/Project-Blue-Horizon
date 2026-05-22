@@ -8,6 +8,7 @@ import {
 } from '@nestjs/websockets';
 import { JwtService } from '@nestjs/jwt';
 import { Server, Socket } from 'socket.io';
+import { PresenceService } from '../../core/presence/presence.service';
 import { AuthenticatedUser } from '../auth/jwt.guard';
 
 type JwtPayload = {
@@ -46,7 +47,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   @WebSocketServer()
   private server!: Server;
 
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly presence: PresenceService,
+  ) {}
 
   async handleConnection(client: AuthenticatedSocket) {
     try {
@@ -56,16 +60,25 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       });
 
       client.data.user = payload.user;
+      this.presence.connect(payload.user.id, client.id);
       await client.join(this.getUserRoom(payload.user.id));
-      client.emit('notifications:connected', { userId: payload.user.id });
+      client.emit('notifications:connected', {
+        userId: payload.user.id,
+        onlineUserIds: this.presence.getOnlineUserIds(),
+      });
+      this.broadcastPresence();
     } catch {
       client.emit('notifications:error', { message: 'Unauthorized socket connection.' });
       client.disconnect(true);
     }
   }
 
-  handleDisconnect(_client: AuthenticatedSocket) {
-    // Socket.IO removes room membership automatically on disconnect.
+  handleDisconnect(client: AuthenticatedSocket) {
+    const user = client.data.user;
+    if (!user) return;
+
+    this.presence.disconnect(user.id, client.id);
+    this.broadcastPresence();
   }
 
   @SubscribeMessage('notifications:ping')
@@ -129,5 +142,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   private getUserRoom(userId: number) {
     return `user:${userId}`;
+  }
+
+  private broadcastPresence() {
+    this.server.emit('users:presence', {
+      onlineUserIds: this.presence.getOnlineUserIds(),
+    });
   }
 }
