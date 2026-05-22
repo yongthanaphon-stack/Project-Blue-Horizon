@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Search, ZoomIn, ZoomOut, Maximize2, Plus, Trash2, X } from 'lucide-react';
+import { workshopsApi } from '../../../api/api';
+import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 
 const PESTEL_AXES = ['POLITICAL', 'ECONOMIC', 'SOCIAL', 'TECH', 'ENVIRONMENTAL', 'LEGAL'];
 const AXIS_ANGLES = PESTEL_AXES.map((_, i) => (i * 360) / 6 - 90);
@@ -550,6 +552,44 @@ export default function EnvironmentalScan() {
     category: 'TECHNOLOGY',
     horizon: 'H2',
   });
+  const [workshop, setWorkshop] = useState(null);
+
+  const workshopParticipants = useMemo(() => {
+    if (workshop?.participants?.length) {
+      return workshop.participants.map(participant => ({
+        id: participant.user?.id ?? participant.user?.email,
+        name: participant.user?.name || participant.user?.email || 'Participant',
+        avatar: participant.user?.avatar || undefined,
+      }));
+    }
+
+    return PARTICIPANTS.map((participant, index) => ({
+      id: `fallback-${index}`,
+      name: participant,
+    }));
+  }, [workshop]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadWorkshop() {
+      if (!workshopId) return;
+
+      try {
+        const response = await workshopsApi.getById(Number(workshopId));
+        if (!isMounted) return;
+        setWorkshop(response.data);
+      } catch (error) {
+        console.error('Failed to load workshop details.', error);
+      }
+    }
+
+    loadWorkshop();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [workshopId]);
 
   const selectedSignal = useMemo(
     () => {
@@ -794,21 +834,12 @@ export default function EnvironmentalScan() {
               <Link to="/workshop" className="workshop-title-back-link">
                 〱 Workshops
               </Link>
-              <h1>University Executive Meeting</h1>
-              <p>ประชุมคณะกรรมการบริหารมหาวิทยาลัย (ก.บ.ม.) ประจำปี 2569</p>
+              <h1>{workshop?.name || 'University Executive Meeting'}</h1>
+              <p>{workshop?.description || 'ประชุมคณะกรรมการบริหารมหาวิทยาลัย (ก.บ.ม.) ประจำปี 2569'}</p>
             </div>
 
             <div className="exact-radar-header-actions">
-              <div className="workshop-avatar-stack">
-                {PARTICIPANTS.map((participant, index) => (
-                  <div
-                    key={participant}
-                    className={`workshop-avatar-chip ${participant}`}
-                    style={{ marginLeft: index > 0 ? -8 : 0, zIndex: 4 - index }}
-                  />
-                ))}
-                <div className="exact-avatar-counter">+4</div>
-              </div>
+              <WorkshopAvatarStack users={workshopParticipants} />
 
               <Link to={`/workshop/${workshopId || 1}/scenarios`} className="btn btn-primary exact-generate-btn" id="generate-scenario-btn">
                 Generate Scenario

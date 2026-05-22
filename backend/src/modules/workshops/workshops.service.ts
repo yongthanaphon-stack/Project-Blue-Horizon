@@ -39,12 +39,22 @@ export class WorkshopsService {
   }
 
   async create(data: CreateWorkshopDto, actorId?: number) {
+    const participantIds = new Set([...(data.participantIds || []), ...(actorId ? [actorId] : [])]);
+
+    const workshopData: any = {
+      name: data.name,
+      description: data.description,
+      horizon: data.horizon || 'H1',
+    };
+
+    if (participantIds.size) {
+      workshopData.participants = {
+        create: Array.from(participantIds).map((userId) => ({ userId })),
+      };
+    }
+
     const workshop = await this.prisma.workshop.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        horizon: data.horizon || 'H1',
-      },
+      data: workshopData,
     });
 
     await this.notifications.notifyWorkshopCreated(workshop.id, actorId);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertTriangle,
@@ -17,7 +17,8 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { scenariosApi } from '../../../api/api';
+import { scenariosApi, workshopsApi } from '../../../api/api';
+import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 import { useAuth } from '../../../hooks/useAuth';
 import { mockScenarios } from '../../../mocks/mockData';
 import { FALLBACK_SCENARIOS, createScenarioViewModel, getFocusClass } from '../scenarioData';
@@ -53,20 +54,11 @@ const ALTERNATIVE_VARIATIONS = [
   },
 ];
 
-function AvatarStack() {
-  return (
-    <div className="scenario-ref-avatar-stack" aria-label="Workshop collaborators">
-      {['analyst-a', 'analyst-b', 'analyst-c'].map((participant, index) => (
-        <span
-          key={participant}
-          className={`workshop-avatar-chip ${participant}`}
-          style={{ marginLeft: index > 0 ? -8 : 0, zIndex: 4 - index }}
-        />
-      ))}
-      <span className="scenario-ref-avatar-more">+4</span>
-    </div>
-  );
-}
+const fallbackScenarioParticipants = [
+  { id: 'fallback-0', name: 'Analyst A' },
+  { id: 'fallback-1', name: 'Analyst B' },
+  { id: 'fallback-2', name: 'Analyst C' },
+];
 
 function SelectedScenarioBox({ scenarios, onRemoveScenario, isLocked }) {
   if (!scenarios.length) {
@@ -409,6 +401,7 @@ export default function ScenarioGeneration() {
   const { workshopId } = useParams();
   const navigate = useNavigate();
   const { canViewAdmin } = useAuth();
+  const [workshop, setWorkshop] = useState(null);
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenarios, setSelectedScenarios] = useState([]);
   const [isSavingScenario, setIsSavingScenario] = useState(false);
@@ -418,6 +411,18 @@ export default function ScenarioGeneration() {
 
   useEffect(() => {
     let isMounted = true;
+
+    async function loadWorkshop() {
+      if (!workshopId) return;
+
+      try {
+        const response = await workshopsApi.getById(Number(workshopId));
+        if (!isMounted) return;
+        setWorkshop(response.data);
+      } catch (error) {
+        console.error('Failed to load workshop details.', error);
+      }
+    }
 
     async function loadScenarios() {
       try {
@@ -442,12 +447,25 @@ export default function ScenarioGeneration() {
       }
     }
 
+    loadWorkshop();
     loadScenarios();
 
     return () => {
       isMounted = false;
     };
   }, [workshopId]);
+
+  const workshopParticipants = useMemo(() => {
+    if (workshop?.participants?.length) {
+      return workshop.participants.map(participant => ({
+        id: participant.user?.id ?? participant.user?.email,
+        name: participant.user?.name || participant.user?.email || 'Participant',
+        avatar: participant.user?.avatar || undefined,
+      }));
+    }
+
+    return fallbackScenarioParticipants;
+  }, [workshop]);
 
   function isScenarioSelected(scenario) {
     return selectedScenarios.some(selected => String(selected.id) === String(scenario.id));
@@ -577,12 +595,12 @@ export default function ScenarioGeneration() {
             >
               〱 Environmental Scanning
             </Link>
-            <h1>University Executive Meeting</h1>
-            <p>ประชุมคณะกรรมการบริหารมหาวิทยาลัย (ก.บ.ม.) ประจำปี 2569</p>
+            <h1>{workshop?.name || 'University Executive Meeting'}</h1>
+            <p>{workshop?.description || 'ประชุมคณะกรรมการบริหารมหาวิทยาลัย (ก.บ.ม.) ประจำปี 2569'}</p>
           </div>
 
           <div className="scenario-ref-header-actions">
-            <AvatarStack />
+            <WorkshopAvatarStack users={workshopParticipants} />
             <button
               type="button"
               className={`scenario-ref-swot-btn ${canUseHeaderAction ? '' : 'disabled'}`}

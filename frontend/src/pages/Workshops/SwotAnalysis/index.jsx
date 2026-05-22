@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Bookmark, TrendingUp, TrendingDown, Lightbulb, AlertTriangle, CheckCircle2, XCircle, Plus, Sparkles } from 'lucide-react';
-import { scenariosApi, swotApi } from '../../../api/api';
+import { scenariosApi, swotApi, workshopsApi } from '../../../api/api';
+import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 import { mockScenarios, mockSwot } from '../../../mocks/mockData';
 import { createScenarioViewModel, getFocusClass } from '../scenarioData';
 
@@ -28,30 +29,64 @@ function normalizeSwot(data) {
 
 export default function SwotAnalysis() {
   const { workshopId, scenarioId } = useParams();
+  const [workshop, setWorkshop] = useState(null);
   const [scenario, setScenario] = useState(INITIAL_SCENARIO);
   const [swot, setSwot] = useState(() => normalizeSwot());
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function loadWorkshop() {
+      if (!workshopId) return;
+
+      try {
+        const response = await workshopsApi.getById(Number(workshopId));
+        if (!isMounted) return;
+        setWorkshop(response.data);
+      } catch (error) {
+        console.error('Failed to load workshop details.', error);
+      }
+    }
+
+    loadWorkshop();
+
     scenariosApi.getById(scenarioId || 1).then(res => {
-      if (res.data) setScenario(createScenarioViewModel(res.data));
+      if (isMounted && res.data) setScenario(createScenarioViewModel(res.data));
     }).catch(err => {
       console.error(err);
-      setScenario(createScenarioViewModel(
-        mockScenarios.find(item => String(item.id) === String(scenarioId)) || mockScenarios[0],
-      ));
+      if (isMounted) {
+        setScenario(createScenarioViewModel(
+          mockScenarios.find(item => String(item.id) === String(scenarioId)) || mockScenarios[0],
+        ));
+      }
     });
 
     swotApi.getByScenario(scenarioId || 1).then(res => {
-      setSwot(normalizeSwot(res.data));
+      if (isMounted) setSwot(normalizeSwot(res.data));
     }).catch(err => {
       console.error(err);
-      setSwot(normalizeSwot());
+      if (isMounted) setSwot(normalizeSwot());
     });
-  }, [scenarioId]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [scenarioId, workshopId]);
   const [newItems, setNewItems] = useState({ strengths: '', weaknesses: '', opportunities: '', threats: '' });
   const focusClass = getFocusClass(scenario.focus);
   const scenarioDrivers = scenario.keyDrivers || [];
   const swotItems = normalizeSwot(swot);
+  const workshopParticipants = (workshop?.participants || []).length
+    ? workshop.participants.map(participant => ({
+      id: participant.user?.id ?? participant.user?.email,
+      name: participant.user?.name || participant.user?.email || 'Participant',
+      avatar: participant.user?.avatar || undefined,
+    }))
+    : [
+      { id: 'fallback-0', name: 'Analyst A' },
+      { id: 'fallback-1', name: 'Analyst B' },
+      { id: 'fallback-2', name: 'Analyst C' },
+    ];
 
   function addItem(quadrant) {
     const text = newItems[quadrant].trim();
@@ -123,26 +158,11 @@ export default function SwotAnalysis() {
           >
             〱 Selected Scenarios
           </Link>
-          <h1>University Executive Meeting</h1>
-          <p className="text-muted text-sm">ประชุมคณะกรรมการบริหารมหาวิทยาลัย (ก.บ.ม.) ประจำปี 2569</p>
+          <h1>{workshop?.name || 'University Executive Meeting'}</h1>
+          <p className="text-muted text-sm">{workshop?.description || 'ประชุมคณะกรรมการบริหารมหาวิทยาลัย (ก.บ.ม.) ประจำปี 2569'}</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="workshop-avatar-stack" style={{ marginRight: 8 }}>
-            {[1, 2, 3].map(i => (
-              <div key={i} style={{
-                width: 32, height: 32, borderRadius: '50%',
-                background: ['#63b3ed', '#f6ad55', '#68d391'][i - 1],
-                border: '2px solid white', marginLeft: i > 1 ? -8 : 0,
-                position: 'relative', zIndex: 4 - i,
-              }} />
-            ))}
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%',
-              background: 'var(--color-gray-200)', border: '2px solid white',
-              marginLeft: -8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.688rem', fontWeight: 600,
-            }}>+4</div>
-          </div>
+          <WorkshopAvatarStack users={workshopParticipants} />
         </div>
       </div>
 

@@ -54,6 +54,7 @@ function normalizeDirectoryUser(user) {
     email: user.email,
     roleHint: formatRoleHint(user.role),
     online: Boolean(user.online),
+    avatar: user.avatar || undefined,
   };
 }
 
@@ -139,6 +140,7 @@ export default function NewWorkshop() {
     name: currentUser?.name || 'Current Host',
     email: currentUser?.email || 'Signed-in workspace user',
     online: true,
+    avatar: currentUser?.avatar || undefined,
   }), [currentUser]);
 
   const memberCount = members.length + 1;
@@ -230,6 +232,7 @@ export default function NewWorkshop() {
       name: workshopName,
       description: form.description.trim(),
       horizon: form.horizon,
+      participantIds: members.map(member => Number(member.id)),
     };
 
     setSaving(true);
@@ -257,7 +260,13 @@ export default function NewWorkshop() {
 
     return (
       <article className={`workshop-user-row ${isHost ? 'host' : ''}`} key={user.id}>
-        <span className="workshop-user-avatar">{getInitials(user.name)}</span>
+        <span className="workshop-user-avatar">
+          {user.avatar ? (
+            <img src={user.avatar} alt={user.name} />
+          ) : (
+            getInitials(user.name)
+          )}
+        </span>
         <span className={`workshop-online-dot ${isOnline ? 'online' : ''}`} aria-label={isOnline ? 'Online' : 'Offline'} />
         <div className="workshop-user-copy">
           <strong>{isHost && <Crown size={14} />} {user.name}</strong>
@@ -416,7 +425,13 @@ export default function NewWorkshop() {
 
             <div className="workshop-member-list">
               <article className="workshop-member-row host">
-                <span className="workshop-user-avatar">{getInitials(hostMember.name)}</span>
+                <span className="workshop-user-avatar">
+                  {hostMember.avatar ? (
+                    <img src={hostMember.avatar} alt={hostMember.name} />
+                  ) : (
+                    getInitials(hostMember.name)
+                  )}
+                </span>
                 <span className="workshop-online-dot online" aria-label="Online" />
                 <div className="workshop-user-copy">
                   <strong><Crown size={15} /> {hostMember.name}</strong>
@@ -433,7 +448,13 @@ export default function NewWorkshop() {
                     className={`workshop-member-row ${isRemoving ? 'removing' : 'added'}`}
                     key={member.id}
                   >
-                    <span className="workshop-user-avatar">{getInitials(member.name)}</span>
+                    <span className="workshop-user-avatar">
+                      {member.avatar ? (
+                        <img src={member.avatar} alt={member.name} />
+                      ) : (
+                        getInitials(member.name)
+                      )}
+                    </span>
                     <span className={`workshop-online-dot ${member.online ? 'online' : ''}`} aria-label={member.online ? 'Online' : 'Offline'} />
                     <div className="workshop-user-copy">
                       <strong>{member.name}</strong>

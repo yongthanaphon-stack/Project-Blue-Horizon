@@ -1,24 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, Bookmark, CheckCircle2, Lock, ShieldCheck } from 'lucide-react';
-import { scenariosApi } from '../../../api/api';
+import { scenariosApi, workshopsApi } from '../../../api/api';
+import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 import { mockScenarios } from '../../../mocks/mockData';
 import { FALLBACK_SCENARIOS, createScenarioViewModel, getFocusClass } from '../scenarioData';
-
-function AvatarStack() {
-  return (
-    <div className="scenario-ref-avatar-stack" aria-label="Workshop collaborators">
-      {['analyst-a', 'analyst-b', 'analyst-c'].map((participant, index) => (
-        <span
-          key={participant}
-          className={`workshop-avatar-chip ${participant}`}
-          style={{ marginLeft: index > 0 ? -8 : 0, zIndex: 4 - index }}
-        />
-      ))}
-      <span className="scenario-ref-avatar-more">+4</span>
-    </div>
-  );
-}
 
 function getFallbackScenario() {
   return mockScenarios.find(scenario => scenario.isSelected) || FALLBACK_SCENARIOS[0];
@@ -39,6 +25,7 @@ export default function SelectedScenario() {
 
     return [];
   }, [location.state]);
+  const [workshop, setWorkshop] = useState(null);
   const [selectedScenarios, setSelectedScenarios] = useState(() => (
     stateScenarios.map(createScenarioViewModel)
   ));
@@ -73,12 +60,41 @@ export default function SelectedScenario() {
       }
     }
 
+    async function loadWorkshop() {
+      if (!workshopId) return;
+
+      try {
+        const response = await workshopsApi.getById(Number(workshopId));
+        if (!isMounted) return;
+        setWorkshop(response.data);
+      } catch (error) {
+        console.error('Failed to load workshop details.', error);
+      }
+    }
+
+    loadWorkshop();
     loadSelectedScenario();
 
     return () => {
       isMounted = false;
     };
   }, [workshopId, stateScenarios]);
+
+  const workshopParticipants = useMemo(() => {
+    if (workshop?.participants?.length) {
+      return workshop.participants.map(participant => ({
+        id: participant.user?.id ?? participant.user?.email,
+        name: participant.user?.name || participant.user?.email || 'Participant',
+        avatar: participant.user?.avatar || undefined,
+      }));
+    }
+
+    return [
+      { id: 'fallback-0', name: 'Analyst A' },
+      { id: 'fallback-1', name: 'Analyst B' },
+      { id: 'fallback-2', name: 'Analyst C' },
+    ];
+  }, [workshop]);
 
   function openSwotAnalysis(scenario) {
     if (!scenario) return;
@@ -106,11 +122,11 @@ export default function SelectedScenario() {
             〱 Scenario Generation
           </Link>
           <h1>Selected Scenarios</h1>
-          <p>ประชุมคณะกรรมการบริหารมหาวิทยาลัย (ก.บ.ม.) ประจำปี 2569</p>
+          <p>{workshop?.description || 'ประชุมคณะกรรมการบริหารมหาวิทยาลัย (ก.บ.ม.) ประจำปี 2569'}</p>
         </div>
 
         <div className="selected-scenario-header-actions">
-          <AvatarStack />
+          <WorkshopAvatarStack users={workshopParticipants} />
           <span className="selected-scenario-lock-pill">
             <Lock size={15} />
             {selectedScenarios.length} saved & locked

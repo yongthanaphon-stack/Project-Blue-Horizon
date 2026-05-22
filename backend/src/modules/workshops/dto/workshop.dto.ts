@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
 import { TimeHorizon } from '@prisma/client';
 
 export class CreateWorkshopDto {
@@ -12,4 +12,9 @@ export class CreateWorkshopDto {
   @IsOptional()
   @IsEnum(TimeHorizon)
   horizon?: TimeHorizon;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  participantIds?: number[];
 }
