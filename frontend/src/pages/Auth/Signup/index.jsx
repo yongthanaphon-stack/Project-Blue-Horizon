@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginFailure, loginStart, loginSuccess } from '../../../app/store/slices/authSlice';
 import { authApi } from '../../../api/api';
-import { getWorkspacePathForRole } from '../../../utils/roles';
+import { clearRedirectPath } from '../../../utils/authStorage';
 import { Eye, EyeOff, LockKeyhole, Mail, UserRound } from 'lucide-react';
 import AuthRadarPreview from '../../../components/AuthRadarPreview';
 import PublicNavbar from '../../../components/PublicNavbar';
@@ -20,11 +20,7 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const dispatch = useDispatch();
-  const redirectTo = typeof location.state?.from === 'string' && location.state.from.startsWith('/')
-    ? location.state.from
-    : null;
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -62,7 +58,8 @@ const Signup = () => {
         user: { ...res.data.user },
       };
       dispatch(loginSuccess(payload));
-      navigate(redirectTo || getWorkspacePathForRole(payload.user?.role), { replace: true });
+      clearRedirectPath();
+      navigate('/', { replace: true });
     } catch (err) {
       const message = err.response?.data?.message || 'Unable to create account. Please try again.';
       const normalizedMessage = Array.isArray(message) ? message.join(' ') : message;
@@ -75,7 +72,7 @@ const Signup = () => {
 
   return (
     <div className="auth-container auth-container--login auth-container--signup-modern">
-      <PublicNavbar />
+      <PublicNavbar showLinks={false} />
 
       <main className="auth-login-hero auth-signup-hero">
         <div className="auth-login-hero-bg" aria-hidden="true" />

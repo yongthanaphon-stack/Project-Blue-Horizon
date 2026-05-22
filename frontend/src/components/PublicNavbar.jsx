@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import Logo from './Logo';
 import './PublicNavbar.css';
 
-export default function PublicNavbar() {
+export default function PublicNavbar({ showLinks = true }) {
   const navigate = useNavigate();
   const { isAuthenticated, logoutUser, workspacePath } = useAuth();
   const navLinks = isAuthenticated
@@ -32,13 +32,15 @@ export default function PublicNavbar() {
           </div>
         </Link>
 
-        <div className="home-navbar-links">
-          {navLinks.map((link) => (
-            <Link key={link.label} to={link.to} className="home-navbar-link">
-              {link.label}
-            </Link>
-          ))}
-        </div>
+        {showLinks && (
+          <div className="home-navbar-links">
+            {navLinks.map((link) => (
+              <Link key={link.label} to={link.to} className="home-navbar-link">
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        )}
 
         <div className="home-navbar-actions">
           {isAuthenticated ? (

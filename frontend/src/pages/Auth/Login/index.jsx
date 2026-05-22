@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { loginFailure, loginStart, loginSuccess } from '../../../app/store/slices/authSlice';
 import { authApi } from '../../../api/api';
 import { clearRedirectPath } from '../../../utils/authStorage';
 import { Eye, EyeOff, LockKeyhole, Mail } from 'lucide-react';
-import { getWorkspacePathForRole } from '../../../utils/roles';
 import AuthRadarPreview from '../../../components/AuthRadarPreview';
 import PublicNavbar from '../../../components/PublicNavbar';
 import './Login.css';
@@ -18,11 +17,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const dispatch = useDispatch();
-  const redirectTo = typeof location.state?.from === 'string' && location.state.from.startsWith('/')
-    ? location.state.from
-    : null;
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -40,7 +35,7 @@ const Login = () => {
       const res = await authApi.login({ email: normalizedEmail, password });
       dispatch(loginSuccess(res.data));
       clearRedirectPath();
-      navigate(redirectTo || getWorkspacePathForRole(res.data.user?.role), { replace: true });
+      navigate('/', { replace: true });
     } catch (err) {
       const message = err.response?.data?.message || 'Unable to sign in. Please try again.';
       setError(message);
@@ -52,7 +47,7 @@ const Login = () => {
 
   return (
     <div className="auth-container auth-container--login">
-      <PublicNavbar />
+      <PublicNavbar showLinks={false} />
 
       <main className="auth-login-hero">
         <div className="auth-login-hero-bg" aria-hidden="true" />

@@ -179,6 +179,20 @@ function ProfilePanel({ children, icon: Icon, subtitle, title }) {
   );
 }
 
+function ProfileCategory({ children, description, title }) {
+  return (
+    <section className="profile-category">
+      <div className="profile-category-header">
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function Profile() {
   const dispatch = useDispatch();
   const [profile, setProfile] = useState(null);
@@ -469,217 +483,247 @@ export default function Profile() {
         </div>
       </section>
 
-      <div className="profile-stats-grid">
-        {profileStatCards.map(stat => {
-          const StatIcon = stat.icon;
-          return (
-            <article key={stat.label} className="profile-stat-card">
-              <span className="profile-stat-icon">
-                <StatIcon size={20} />
-              </span>
-              <div>
-                <span className="profile-stat-label">{stat.label}</span>
-                <strong>{stat.value}</strong>
-                <small>{stat.helper}</small>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      <div className="profile-content-grid">
-        <div className="profile-main-stack">
-          <ProfilePanel
-            icon={UserRound}
-            title="Personal Information"
-            subtitle="Keep your workspace profile accurate for collaborators."
+      <div className="profile-layout-grid">
+        <main className="profile-layout-main" aria-label="Profile workspace">
+          <ProfileCategory
+            title="Account Details"
+            description="Edit the profile information collaborators see across the workspace."
           >
-            <form id="profile-personal-form" className="profile-form" onSubmit={handleProfileSubmit}>
-              <div className="profile-form-grid">
-                <label className="profile-field" htmlFor="name">
-                  <span>Full Name</span>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className={validationErrors.name ? 'profile-input-error' : ''}
-                    placeholder="Enter your name"
-                  />
-                  {validationErrors.name && <small>{validationErrors.name}</small>}
-                </label>
+            <ProfilePanel
+              icon={UserRound}
+              title="Personal Information"
+              subtitle="Keep your name, email, and workspace identity up to date."
+            >
+              <form id="profile-personal-form" className="profile-form" onSubmit={handleProfileSubmit}>
+                <div className="profile-form-grid">
+                  <label className="profile-field" htmlFor="name">
+                    <span>Full Name</span>
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className={validationErrors.name ? 'profile-input-error' : ''}
+                      placeholder="Enter your name"
+                    />
+                    {validationErrors.name && <small>{validationErrors.name}</small>}
+                  </label>
 
-                <label className="profile-field" htmlFor="email">
-                  <span>Email Address</span>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className={validationErrors.email ? 'profile-input-error' : ''}
-                    placeholder="Enter your email"
-                  />
-                  {validationErrors.email && <small>{validationErrors.email}</small>}
-                </label>
+                  <label className="profile-field" htmlFor="email">
+                    <span>Email Address</span>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className={validationErrors.email ? 'profile-input-error' : ''}
+                      placeholder="Enter your email"
+                    />
+                    {validationErrors.email && <small>{validationErrors.email}</small>}
+                  </label>
 
-                <div className="profile-readonly-field">
-                  <span>Role</span>
-                  <strong>{roleLabel}</strong>
-                </div>
-
-                <div className="profile-readonly-field">
-                  <span>Member Since</span>
-                  <strong>{joinDate}</strong>
-                </div>
-              </div>
-
-              <div className="profile-action-row">
-                <button type="submit" className="btn btn-primary" disabled={savingProfile}>
-                  <Save size={18} />
-                  {savingProfile ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </ProfilePanel>
-
-          <ProfilePanel
-            icon={ShieldCheck}
-            title="Security Settings"
-            subtitle="Update your password and keep account access protected."
-          >
-            <form className="profile-form" onSubmit={handlePasswordSubmit}>
-              <div className="profile-form-grid">
-                <label className="profile-field profile-field-full" htmlFor="currentPassword">
-                  <span>Current Password</span>
-                  <input
-                    id="currentPassword"
-                    name="currentPassword"
-                    type="password"
-                    value={formData.currentPassword}
-                    onChange={handleInputChange}
-                    className={validationErrors.currentPassword ? 'profile-input-error' : ''}
-                    placeholder="Enter current password"
-                  />
-                  {validationErrors.currentPassword && <small>{validationErrors.currentPassword}</small>}
-                </label>
-
-                <label className="profile-field" htmlFor="newPassword">
-                  <span>New Password</span>
-                  <input
-                    id="newPassword"
-                    name="newPassword"
-                    type="password"
-                    value={formData.newPassword}
-                    onChange={handleInputChange}
-                    className={validationErrors.newPassword ? 'profile-input-error' : ''}
-                    placeholder="At least 8 characters"
-                  />
-                  {validationErrors.newPassword && <small>{validationErrors.newPassword}</small>}
-                </label>
-
-                <label className="profile-field" htmlFor="confirmPassword">
-                  <span>Confirm Password</span>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className={validationErrors.confirmPassword ? 'profile-input-error' : ''}
-                    placeholder="Confirm new password"
-                  />
-                  {validationErrors.confirmPassword && <small>{validationErrors.confirmPassword}</small>}
-                </label>
-              </div>
-
-              <div className="profile-security-note">
-                <KeyRound size={18} />
-                <span>Password changes update the authenticated session automatically.</span>
-              </div>
-
-              <div className="profile-action-row">
-                <button type="submit" className="btn btn-secondary" disabled={savingPassword}>
-                  <ShieldCheck size={18} />
-                  {savingPassword ? 'Updating...' : 'Update Password'}
-                </button>
-              </div>
-            </form>
-          </ProfilePanel>
-        </div>
-
-        <aside className="profile-side-stack">
-          <ProfilePanel icon={Activity} title="Recent Activity" subtitle="Latest profile and workspace signals.">
-            <div className="profile-activity-list">
-              {activityItems.length ? activityItems.map(item => {
-                const ActivityIcon = ACTIVITY_ICONS[item.kind] || Activity;
-                return (
-                  <div key={`${item.kind}-${item.title}-${item.occurredAt}`} className="profile-activity-row">
-                    <span className="profile-row-icon">
-                      <ActivityIcon size={18} />
-                    </span>
-                    <div>
-                      <strong>{item.title}</strong>
-                      <span>{formatActivityMeta(item.occurredAt)}</span>
-                    </div>
+                  <div className="profile-readonly-field">
+                    <span>Role</span>
+                    <strong>{roleLabel}</strong>
                   </div>
-                );
-              }) : (
-                <p className="profile-empty-state">No recent activity yet.</p>
-              )}
-            </div>
-          </ProfilePanel>
 
-          <ProfilePanel icon={Bell} title="Preferences" subtitle="Notification settings for your workspace.">
-            <div className="profile-toggle-list">
-              {NOTIFICATION_ITEMS.map(item => {
-                const PreferenceIcon = item.icon;
-                const checked = notificationPrefs[item.key];
-                return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    className={`profile-toggle-row ${checked ? 'active' : ''}`}
-                    onClick={() => handleNotificationToggle(item.key)}
-                    disabled={savingPreference === item.key}
-                    aria-pressed={checked}
-                  >
-                    <span className="profile-toggle-icon">
-                      <PreferenceIcon size={18} />
-                    </span>
-                    <span>
-                      <strong>{item.label}</strong>
-                      <small>{item.helper}</small>
-                    </span>
-                    <span className="profile-switch" aria-hidden="true" />
+                  <div className="profile-readonly-field">
+                    <span>Member Since</span>
+                    <strong>{joinDate}</strong>
+                  </div>
+                </div>
+
+                <div className="profile-action-row">
+                  <button type="submit" className="btn btn-primary" disabled={savingProfile}>
+                    <Save size={18} />
+                    {savingProfile ? 'Saving...' : 'Save Changes'}
                   </button>
-                );
-              })}
-            </div>
-          </ProfilePanel>
+                </div>
+              </form>
+            </ProfilePanel>
+          </ProfileCategory>
 
-          <ProfilePanel icon={Link2} title="Connected Accounts" subtitle="Workspace identity and social links.">
-            <div className="profile-connected-list">
-              {connectedAccounts.map(account => {
-                const AccountIcon = account.icon;
+          <ProfileCategory
+            title="Security"
+            description="Update password protection without leaving your profile."
+          >
+            <ProfilePanel
+              icon={ShieldCheck}
+              title="Security Settings"
+              subtitle="Change your password and keep account access protected."
+            >
+              <form className="profile-form" onSubmit={handlePasswordSubmit}>
+                <div className="profile-form-grid">
+                  <label className="profile-field profile-field-full" htmlFor="currentPassword">
+                    <span>Current Password</span>
+                    <input
+                      id="currentPassword"
+                      name="currentPassword"
+                      type="password"
+                      value={formData.currentPassword}
+                      onChange={handleInputChange}
+                      className={validationErrors.currentPassword ? 'profile-input-error' : ''}
+                      placeholder="Enter current password"
+                    />
+                    {validationErrors.currentPassword && <small>{validationErrors.currentPassword}</small>}
+                  </label>
+
+                  <label className="profile-field" htmlFor="newPassword">
+                    <span>New Password</span>
+                    <input
+                      id="newPassword"
+                      name="newPassword"
+                      type="password"
+                      value={formData.newPassword}
+                      onChange={handleInputChange}
+                      className={validationErrors.newPassword ? 'profile-input-error' : ''}
+                      placeholder="At least 8 characters"
+                    />
+                    {validationErrors.newPassword && <small>{validationErrors.newPassword}</small>}
+                  </label>
+
+                  <label className="profile-field" htmlFor="confirmPassword">
+                    <span>Confirm Password</span>
+                    <input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      className={validationErrors.confirmPassword ? 'profile-input-error' : ''}
+                      placeholder="Confirm new password"
+                    />
+                    {validationErrors.confirmPassword && <small>{validationErrors.confirmPassword}</small>}
+                  </label>
+                </div>
+
+                <div className="profile-security-note">
+                  <KeyRound size={18} />
+                  <span>Password changes update the authenticated session automatically.</span>
+                </div>
+
+                <div className="profile-action-row">
+                  <button type="submit" className="btn btn-secondary" disabled={savingPassword}>
+                    <ShieldCheck size={18} />
+                    {savingPassword ? 'Updating...' : 'Update Password'}
+                  </button>
+                </div>
+              </form>
+            </ProfilePanel>
+          </ProfileCategory>
+
+          <ProfileCategory
+            title="Activity"
+            description="Review the latest profile, signal, voting, and workshop actions."
+          >
+            <ProfilePanel icon={Activity} title="Recent Activity" subtitle="Latest profile and workspace signals.">
+              <div className="profile-activity-list">
+                {activityItems.length ? activityItems.map(item => {
+                  const ActivityIcon = ACTIVITY_ICONS[item.kind] || Activity;
+                  return (
+                    <div key={`${item.kind}-${item.title}-${item.occurredAt}`} className="profile-activity-row">
+                      <span className="profile-row-icon">
+                        <ActivityIcon size={18} />
+                      </span>
+                      <div>
+                        <strong>{item.title}</strong>
+                        <span>{formatActivityMeta(item.occurredAt)}</span>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <p className="profile-empty-state">No recent activity yet.</p>
+                )}
+              </div>
+            </ProfilePanel>
+          </ProfileCategory>
+        </main>
+
+        <aside className="profile-layout-rail" aria-label="Profile summary and preferences">
+          <ProfileCategory
+            title="Overview"
+            description="At-a-glance contribution and account status."
+          >
+            <div className="profile-stats-grid profile-stats-grid--rail">
+              {profileStatCards.map(stat => {
+                const StatIcon = stat.icon;
                 return (
-                  <div key={account.name} className="profile-connected-row">
-                    <span className="profile-row-icon">
-                      <AccountIcon size={18} />
+                  <article key={stat.label} className="profile-stat-card">
+                    <span className="profile-stat-icon">
+                      <StatIcon size={20} />
                     </span>
                     <div>
-                      <strong>{account.name}</strong>
-                      <span>{account.detail}</span>
+                      <span className="profile-stat-label">{stat.label}</span>
+                      <strong>{stat.value}</strong>
+                      <small>{stat.helper}</small>
                     </div>
-                    <span className={account.connected ? 'profile-chip-success' : 'profile-chip-muted'}>
-                      {account.status}
-                    </span>
-                  </div>
+                  </article>
                 );
               })}
             </div>
-          </ProfilePanel>
+          </ProfileCategory>
+
+          <ProfileCategory
+            title="Preferences"
+            description="Control workspace notifications quickly."
+          >
+            <ProfilePanel icon={Bell} title="Notification Settings" subtitle="Choose which updates reach you.">
+              <div className="profile-toggle-list">
+                {NOTIFICATION_ITEMS.map(item => {
+                  const PreferenceIcon = item.icon;
+                  const checked = notificationPrefs[item.key];
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={`profile-toggle-row ${checked ? 'active' : ''}`}
+                      onClick={() => handleNotificationToggle(item.key)}
+                      disabled={savingPreference === item.key}
+                      aria-pressed={checked}
+                    >
+                      <span className="profile-toggle-icon">
+                        <PreferenceIcon size={18} />
+                      </span>
+                      <span>
+                        <strong>{item.label}</strong>
+                        <small>{item.helper}</small>
+                      </span>
+                      <span className="profile-switch" aria-hidden="true" />
+                    </button>
+                  );
+                })}
+              </div>
+            </ProfilePanel>
+          </ProfileCategory>
+
+          <ProfileCategory
+            title="Connected Accounts"
+            description="Workspace identity and linked access."
+          >
+            <ProfilePanel icon={Link2} title="Workspace Links" subtitle="Accounts currently connected to this profile.">
+              <div className="profile-connected-list">
+                {connectedAccounts.map(account => {
+                  const AccountIcon = account.icon;
+                  return (
+                    <div key={account.name} className="profile-connected-row">
+                      <span className="profile-row-icon">
+                        <AccountIcon size={18} />
+                      </span>
+                      <div>
+                        <strong>{account.name}</strong>
+                        <span>{account.detail}</span>
+                      </div>
+                      <span className={account.connected ? 'profile-chip-success' : 'profile-chip-muted'}>
+                        {account.status}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </ProfilePanel>
+          </ProfileCategory>
         </aside>
       </div>
     </div>
