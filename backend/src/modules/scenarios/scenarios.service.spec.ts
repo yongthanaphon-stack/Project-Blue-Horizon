@@ -1,0 +1,348 @@
+import { NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { ScenariosService } from './scenarios.service';
+
+describe('ScenariosService AI generation', () => {
+  const originalApiKey = process.env.DOTBLUE_API_KEY;
+
+  afterEach(() => {
+    if (originalApiKey === undefined) {
+      delete process.env.DOTBLUE_API_KEY;
+    } else {
+      process.env.DOTBLUE_API_KEY = originalApiKey;
+    }
+    jest.restoreAllMocks();
+  });
+
+  function createService({
+    apiKey = 'test-key',
+    aiContent = JSON.stringify([
+      {
+        title: 'Adaptive Campus',
+        description: 'AI-supported learning ecosystems become standard.',
+        milestone: 'First scaled deployment',
+        probability: 'High',
+        focus: 'Teaching and learning',
+        keyDrivers: ['AI adoption', 'Digital infrastructure'],
+      },
+    ]),
+    aiResponse,
+    aiResponses,
+    workshop = {
+      id: 7,
+      horizon: 'H2',
+      scenarios: [],
+      signals: [
+        {
+          name: 'AI tutors',
+          shortDetails: 'Personalized tutoring expands.',
+          description: 'AI tutoring systems improve access.',
+        },
+      ],
+    },
+  }: {
+    apiKey?: string;
+    aiContent?: string;
+    aiResponse?: unknown;
+    aiResponses?: unknown[];
+    workshop?:
+      | {
+          id: number;
+          horizon: string;
+          scenarios?: Array<{
+            title: string;
+            description: string;
+            focus?: string | null;
+            milestone?: string | null;
+          }>;
+          signals: Array<{
+            name: string;
+            shortDetails: string;
+            description: string;
+          }>;
+        }
+      | null;
+  } = {}) {
+    if (apiKey) {
+      process.env.DOTBLUE_API_KEY = apiKey;
+    } else {
+      delete process.env.DOTBLUE_API_KEY;
+    }
+
+    const prisma = {
+      workshop: {
+        findUnique: jest.fn().mockResolvedValue(workshop),
+      },
+      scenario: {
+        create: jest.fn().mockImplementation(({ data }) =>
+          Promise.resolve({
+            id: 42,
+            ...data,
+          }),
+        ),
+      },
+    };
+    const notifications = {
+      notifyScenarioCreated: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new ScenariosService(prisma as any, notifications as any);
+    const defaultAiResponse = aiResponse ?? {
+        choices: [
+          {
+            message: {
+              content: aiContent,
+            },
+          },
+        ],
+      };
+    const aiCreate = jest.fn();
+    (aiResponses ?? [defaultAiResponse]).forEach((response) => {
+      aiCreate.mockResolvedValueOnce(response);
+    });
+    aiCreate.mockResolvedValue(defaultAiResponse);
+
+    (service as any).aiClient = {
+      chat: {
+        completions: {
+          create: aiCreate,
+        },
+      },
+    };
+
+    return { service, prisma, notifications, aiCreate };
+  }
+
+  it('requires DOTBLUE_API_KEY before contacting the AI provider', async () => {
+    const { service, aiCreate } = createService({ apiKey: '' });
+
+    await expect(service.generateScenarioFromAI(7, 9)).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
+    expect(aiCreate).not.toHaveBeenCalled();
+  });
+
+  it('reports a missing workshop as not found', async () => {
+    const { service, aiCreate } = createService({ workshop: null });
+
+    await expect(service.generateScenarioFromAI(404, 9)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(aiCreate).not.toHaveBeenCalled();
+  });
+
+  it('creates a scenario from a fenced AI JSON response', async () => {
+    const { service, prisma, notifications } = createService({
+      aiContent:
+        '```json\n[{"title":"Adaptive Campus","description":"AI-supported learning ecosystems become standard.","milestone":"First scaled deployment","probability":"High","focus":"Teaching and learning","keyDrivers":["AI adoption","Digital infrastructure"]}]\n```',
+    });
+
+    const scenario = await service.generateScenarioFromAI(7, 9);
+
+    expect(scenario).toMatchObject({
+      id: 42,
+      title: 'Adaptive Campus',
+      workshopId: 7,
+      isSelected: false,
+    });
+    expect(prisma.scenario.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        title: 'Adaptive Campus',
+        keyDrivers: ['AI adoption', 'Digital infrastructure'],
+      }),
+    });
+    expect(notifications.notifyScenarioCreated).toHaveBeenCalledWith(42, 9);
+  });
+
+  it('uses an available dotBlue model by default', async () => {
+    const { service, aiCreate } = createService();
+
+    await service.generateScenarioFromAI(7, 9);
+
+    expect(aiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'openai/gpt-4o-mini',
+      }),
+    );
+  });
+
+  it('creates a scenario from a dotBlue SSE response string', async () => {
+    const { service, prisma } = createService({
+      aiResponse:
+        'data: {"choices":[{"delta":{"content":"[{\\"title\\":\\"SSE Campus\\",\\"description\\":\\"Scenario from streamed chunks\\",\\"milestone\\":\\"Pilot launched\\",\\"probability\\":\\"Medium\\",\\"focus\\":\\"Digital strategy\\",\\"keyDrivers\\":[\\"AI platforms\\"]}]"}}],"finish_reason":null}\n\n' +
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n' +
+        'data: [DONE]\n\n',
+    });
+
+    const scenario = await service.generateScenarioFromAI(7, 9);
+
+    expect(scenario).toMatchObject({
+      title: 'SSE Campus',
+      workshopId: 7,
+    });
+    expect(prisma.scenario.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        description: 'Scenario from streamed chunks',
+        keyDrivers: ['AI platforms'],
+      }),
+    });
+  });
+
+  it('includes existing scenarios in the prompt so AI avoids repeating them', async () => {
+    const { service, aiCreate } = createService({
+      aiContent: JSON.stringify([
+        {
+          title: 'Distributed Campus Commons',
+          description: 'A new scenario that does not reuse the existing title.',
+          milestone: 'Cross-campus services become interoperable',
+          probability: 'Medium',
+          focus: 'Institutional collaboration',
+          keyDrivers: ['AI tutors', 'Shared platforms'],
+        },
+      ]),
+      workshop: {
+        id: 7,
+        horizon: 'H2',
+        signals: [
+          {
+            name: 'AI tutors',
+            shortDetails: 'Personalized tutoring expands.',
+            description: 'AI tutoring systems improve access.',
+          },
+        ],
+        scenarios: [
+          {
+            title: 'Adaptive Campus',
+            description: 'AI-supported learning ecosystems become standard.',
+            focus: 'Teaching and learning',
+            milestone: 'First scaled deployment',
+          },
+        ],
+      },
+    });
+
+    await service.generateScenarioFromAI(7, 9);
+
+    expect(aiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            content: expect.stringContaining('Existing scenarios to avoid'),
+          }),
+        ],
+      }),
+    );
+    expect(aiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            content: expect.stringContaining('Adaptive Campus'),
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('retries once when AI returns an existing scenario title', async () => {
+    const { service, prisma, aiCreate } = createService({
+      workshop: {
+        id: 7,
+        horizon: 'H2',
+        signals: [
+          {
+            name: 'AI tutors',
+            shortDetails: 'Personalized tutoring expands.',
+            description: 'AI tutoring systems improve access.',
+          },
+        ],
+        scenarios: [
+          {
+            title: 'Adaptive Campus',
+            description: 'AI-supported learning ecosystems become standard.',
+          },
+        ],
+      },
+      aiResponses: [
+        {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([
+                  {
+                    title: 'Adaptive Campus',
+                    description: 'A repeated title with a changed description.',
+                    milestone: 'Second version',
+                    probability: 'High',
+                    focus: 'Teaching and learning',
+                    keyDrivers: ['AI adoption'],
+                  },
+                ]),
+              },
+            },
+          ],
+        },
+        {
+          choices: [
+            {
+              message: {
+                content: JSON.stringify([
+                  {
+                    title: 'Ambient Learning Grid',
+                    description: 'A distinct scenario with a new strategic frame.',
+                    milestone: 'Adaptive services become invisible infrastructure',
+                    probability: 'Medium',
+                    focus: 'Campus infrastructure',
+                    keyDrivers: ['AI adoption', 'Sensor networks'],
+                  },
+                ]),
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    const scenario = await service.generateScenarioFromAI(7, 9);
+
+    expect(aiCreate).toHaveBeenCalledTimes(2);
+    expect(scenario).toMatchObject({
+      title: 'Ambient Learning Grid',
+    });
+    expect(prisma.scenario.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        title: 'Ambient Learning Grid',
+      }),
+    });
+  });
+
+  it('uses radar-selected signals in the prompt when provided', async () => {
+    const { service, aiCreate } = createService();
+
+    await service.generateScenarioFromAI(7, 9, [
+      {
+        id: 'radar-ai-advising',
+        name: 'Radar AI Advising Assistants',
+        description: 'A signal selected from the Environmental Scanning radar.',
+        category: 'TECHNOLOGY',
+        horizon: 'H2 (3-5 Years)',
+      },
+    ]);
+
+    expect(aiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            content: expect.stringContaining('Radar-selected input signals'),
+          }),
+        ],
+      }),
+    );
+    expect(aiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            content: expect.stringContaining('Radar AI Advising Assistants'),
+          }),
+        ],
+      }),
+    );
+  });
+});

@@ -7952,6 +7952,8 @@ button.ws-new-btn {
 .scenario-ref-section-title {
   gap: 12px;
   margin: 0 0 18px 0;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
 .scenario-ref-recommend-section {
@@ -7960,7 +7962,16 @@ button.ws-new-btn {
   margin-right: auto;
 }
 
-.scenario-ref-section-title span {
+.scenario-ref-section-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scenario-ref-status-pill {
   min-height: 20px;
   padding: 0 8px;
   border-radius: 999px;
@@ -7971,6 +7982,40 @@ button.ws-new-btn {
   font-size: 0.58rem;
   font-weight: 850;
   letter-spacing: 0.04em;
+}
+
+.scenario-ref-ai-btn {
+  min-height: 36px;
+  max-width: 100%;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #0047a8;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.2;
+  box-shadow: 0 4px 12px rgba(0, 71, 168, 0.15);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.scenario-ref-ai-btn:disabled {
+  border: 1px solid #b7cae6;
+  background: #eaf2ff;
+  color: #0047a8;
+  cursor: not-allowed;
+}
+
+.scenario-ref-ai-btn span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .scenario-ref-grid {
@@ -9218,6 +9263,14 @@ button.ws-new-btn {
     grid-template-columns: 1fr;
   }
 
+  .scenario-ref-section-title {
+    align-items: flex-start;
+  }
+
+  .scenario-ref-section-actions {
+    justify-content: flex-start;
+  }
+
   .scenario-ref-main-layout .scenario-ref-selected-section {
     position: static;
   }
@@ -9297,6 +9350,15 @@ button.ws-new-btn {
     margin-left: 0;
   }
 
+  .scenario-ref-section-actions,
+  .scenario-ref-ai-btn {
+    width: 100%;
+  }
+
+  .scenario-ref-ai-btn {
+    min-height: 42px;
+  }
+
   .scenario-ref-selected-list {
     grid-template-columns: 1fr;
   }
@@ -9306,7 +9368,7 @@ button.ws-new-btn {
     padding: 14px 18px;
   }
 
-.scenario-ref-page {
+  .scenario-ref-page {
     padding-bottom: 0;
   }
 }

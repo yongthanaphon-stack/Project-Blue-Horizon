@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useAlert } from '../../../hooks/useAlert';
 import {
   AlertTriangle,
   Bookmark,
@@ -7,21 +8,27 @@ import {
   CheckCircle2,
   FolderPlus,
   Layers3,
+  Loader2,
   Lock,
   Maximize2,
   Plus,
   Save,
   Share2,
+  Sparkles,
   Users,
   X,
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { scenariosApi, workshopsApi } from '../../../api/api';
+import { generateScenarioWithAI, scenariosApi, workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 import { useAuth } from '../../../hooks/useAuth';
 import { mockScenarios } from '../../../mocks/mockData';
 import { FALLBACK_SCENARIOS, createScenarioViewModel, getFocusClass } from '../scenarioData';
+import {
+  readRadarSignalsFromStorage,
+  toScenarioGenerationSignals,
+} from '../radarStorage';
 
 const ALTERNATIVE_VARIATIONS = [
   {
@@ -59,6 +66,11 @@ const fallbackScenarioParticipants = [
   { id: 'fallback-1', name: 'Analyst B' },
   { id: 'fallback-2', name: 'Analyst C' },
 ];
+
+function getApiErrorMessage(error, fallback) {
+  const message = error?.response?.data?.message || error?.response?.data?.error || error?.message;
+  return message || fallback;
+}
 
 function SelectedScenarioBox({ scenarios, onRemoveScenario, isLocked }) {
   if (!scenarios.length) {
@@ -278,8 +290,11 @@ function VariationPriorityDots({ priority }) {
 
 function ScenarioDetailPage({ scenario, onBack }) {
   const signalChips = scenario.relatedSignals || [];
-  const mainDriver = scenario.keyDrivers[0] || 'regional transformation signals';
-  const secondDriver = scenario.keyDrivers[1] || 'institutional readiness';
+  const keyDrivers = scenario.keyDrivers || [];
+  const descriptionParagraphs = String(scenario.description || '')
+    .split(/\n{2,}/)
+    .map(paragraph => paragraph.trim())
+    .filter(Boolean);
 
   return (
     <div className="scenario-result-page">
@@ -293,10 +308,9 @@ function ScenarioDetailPage({ scenario, onBack }) {
 
       <header className="scenario-result-header">
         <div>
-          <h1>Scenario Results: Blue Horizon</h1>
+          <h1>Scenario Detail: {scenario.title}</h1>
           <p>
-            Projected variations of potential future states for Strategy Planning 2025,
-            synthesized from 124 global market signals.
+            AI-generated scenario details synthesized from this workshop's signal set.
           </p>
         </div>
 
@@ -309,8 +323,8 @@ function ScenarioDetailPage({ scenario, onBack }) {
         <article className="scenario-result-main-card">
           <div className="scenario-result-hero">
             <div className="scenario-result-badges">
-              <span>HIGH PROBABILITY</span>
-              <span>2025 Q3 MILESTONE</span>
+              <span>{scenario.probability || 'Probability pending'}</span>
+              <span>{scenario.milestone || 'Milestone pending'}</span>
             </div>
 
             <div className="scenario-result-hero-icon" aria-hidden="true">
@@ -324,7 +338,7 @@ function ScenarioDetailPage({ scenario, onBack }) {
 
           <div className="scenario-result-body">
             <div className="scenario-result-title-row">
-              <h2>{scenario.resultTitle}</h2>
+              <h2>{scenario.title}</h2>
               <div>
                 <button type="button" aria-label="Bookmark scenario result">
                   <Bookmark size={21} />
@@ -335,29 +349,34 @@ function ScenarioDetailPage({ scenario, onBack }) {
               </div>
             </div>
 
-            <p>
-              In this scenario, we anticipate a massive shift toward localized production
-              and decentralized energy grids. Driven by the recent surges in{' '}
-              <strong>{mainDriver}</strong> and <strong>{secondDriver}</strong>, the market
-              fragments into high-efficiency clusters.
-            </p>
-
-            <p>
-              Strategic implications suggest that centralized logistics will face significant
-              pressure, while hyper-local distribution networks will see a 40% valuation
-              increase over the next 18 months. This represents our most favorable outcome
-              for the "Blue Horizon" initiative.
-            </p>
+            {descriptionParagraphs.length ? (
+              descriptionParagraphs.map(paragraph => (
+                <p key={paragraph}>{paragraph}</p>
+              ))
+            ) : (
+              <p>No generated description is available for this scenario yet.</p>
+            )}
 
             <div className="scenario-result-related">
-              <h3>RELATED SIGNALS</h3>
+              <h3>KEY DRIVERS</h3>
               <div>
-                {signalChips.map(signal => (
-                  <span key={signal}>{signal}</span>
+                {keyDrivers.map(driver => (
+                  <span key={driver}>{driver}</span>
                 ))}
-                <span>+12 more</span>
+                {!keyDrivers.length && <span>No key drivers provided</span>}
               </div>
             </div>
+
+            {signalChips.length > 0 && (
+              <div className="scenario-result-related">
+                <h3>RELATED SIGNALS</h3>
+                <div>
+                  {signalChips.map(signal => (
+                    <span key={signal}>{signal}</span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <footer className="scenario-result-footer">
@@ -401,6 +420,8 @@ export default function ScenarioGeneration() {
   const { workshopId } = useParams();
   const navigate = useNavigate();
   const { canViewAdmin } = useAuth();
+  const { showError, showSuccess } = useAlert();
+
   const [workshop, setWorkshop] = useState(null);
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenarios, setSelectedScenarios] = useState([]);
@@ -409,6 +430,7 @@ export default function ScenarioGeneration() {
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [detailScenario, setDetailScenario] = useState(null);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -474,6 +496,31 @@ export default function ScenarioGeneration() {
     return fallbackScenarioParticipants;
   }, [workshop]);
 
+  const handleGenerateAI = async () => {
+    const radarSignals = toScenarioGenerationSignals(
+      readRadarSignalsFromStorage(workshopId || 1, []),
+    );
+
+    if (!radarSignals.length) {
+      showError('Add signals to the Environmental Scanning radar before generating a scenario.');
+      return;
+    }
+
+    setIsGeneratingAI(true);
+    try {
+      const newScenario = await generateScenarioWithAI(workshopId || 1, radarSignals);
+      const viewModel = createScenarioViewModel(newScenario);
+
+      setScenarios(prev => [viewModel, ...prev]);
+      showSuccess('AI generated a new scenario successfully.');
+    } catch (error) {
+      console.error('Failed to generate AI scenario:', error);
+      showError(getApiErrorMessage(error, 'Failed to generate scenario from AI. Please try again.'));
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   function isScenarioSelected(scenario) {
     return selectedScenarios.some(selected => String(selected.id) === String(scenario.id));
   }
@@ -518,12 +565,6 @@ export default function ScenarioGeneration() {
     if (!canSaveScenario) return;
 
     setIsSaveDialogOpen(true);
-  }
-
-  function scrollToScenarioRecommendations() {
-    document
-      .getElementById('scenario-recommendations')
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   async function saveSelectedScenario() {
@@ -641,7 +682,28 @@ export default function ScenarioGeneration() {
           <section className="scenario-ref-recommend-section" id="scenario-recommendations">
             <div className="scenario-ref-section-title">
               <h2>Recommend Scenario</h2>
-              <span>{isSelectionLockedForUser ? 'LOCKED' : `${actionCount} ACTION REQUIRED`}</span>
+
+              <div className="scenario-ref-section-actions">
+                <span className="scenario-ref-status-pill">
+                  {isSelectionLockedForUser ? 'LOCKED' : `${actionCount} ACTION REQUIRED`}
+                </span>
+
+                {!isSelectionLockedForUser && (
+                  <button
+                    type="button"
+                    className="scenario-ref-ai-btn"
+                    onClick={handleGenerateAI}
+                    disabled={isGeneratingAI}
+                  >
+                    {isGeneratingAI ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Sparkles size={16} />
+                    )}
+                    <span>{isGeneratingAI ? 'AI is analyzing signals...' : 'Generate with AI'}</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="scenario-ref-grid">
@@ -664,6 +726,7 @@ export default function ScenarioGeneration() {
                 <h2>Selected Scenarios</h2>
               </div>
 
+              {/* ป้ายกำกับที่ถูกปรับให้กดไม่ได้แล้ว (เป็นแค่ div ธรรมดา) */}
               <div
                 className={`scenario-ref-selection-action ${selectedScenarioCount ? 'active' : ''} ${isSelectionLockedForUser ? 'disabled' : ''}`}
               >

@@ -3,6 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { Search, ZoomIn, ZoomOut, Maximize2, Plus, Trash2, X } from 'lucide-react';
 import { workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
+import {
+  readRadarSignalsFromStorage,
+  saveRadarSignalsToStorage,
+} from '../radarStorage';
 
 const PESTEL_AXES = ['POLITICAL', 'ECONOMIC', 'SOCIAL', 'TECH', 'ENVIRONMENTAL', 'LEGAL'];
 const AXIS_ANGLES = PESTEL_AXES.map((_, i) => (i * 360) / 6 - 90);
@@ -127,7 +131,6 @@ const PROTOTYPE_SIGNALS = [
 ];
 
 const PARTICIPANTS = ['analyst-a', 'analyst-b', 'analyst-c'];
-const RADAR_STORAGE_VERSION = 1;
 const RADAR_ANIMATION_DURATION_MS = 940;
 const RADAR_FLOATING_VISIBLE_LIMIT = 5;
 
@@ -184,53 +187,6 @@ function createRadarPlacement(category, horizon, currentCount) {
 
 function getDefaultRadarSignals() {
   return PROTOTYPE_SIGNALS.filter(signal => signal.placement);
-}
-
-function getRadarStorageKey(workshopId) {
-  const safeWorkshopId = workshopId || 'draft';
-  return `blue-horizon:workshop:${safeWorkshopId}:radar:v${RADAR_STORAGE_VERSION}`;
-}
-
-function readRadarSignalsFromStorage(workshopId) {
-  if (typeof window === 'undefined') {
-    return getDefaultRadarSignals();
-  }
-
-  try {
-    const savedValue = window.localStorage.getItem(getRadarStorageKey(workshopId));
-    if (!savedValue) {
-      return getDefaultRadarSignals();
-    }
-
-    const parsedSignals = JSON.parse(savedValue);
-    if (!Array.isArray(parsedSignals)) {
-      return getDefaultRadarSignals();
-    }
-
-    return parsedSignals.filter(signal =>
-      signal
-      && typeof signal.id === 'string'
-      && typeof signal.name === 'string'
-      && signal.placement,
-    );
-  } catch {
-    return getDefaultRadarSignals();
-  }
-}
-
-function saveRadarSignalsToStorage(workshopId, signals) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(
-      getRadarStorageKey(workshopId),
-      JSON.stringify(signals),
-    );
-  } catch {
-    // Local storage can fail in private browsing or when storage is full.
-  }
 }
 
 function PriorityMeter({ color, count }) {
@@ -543,7 +499,9 @@ export default function EnvironmentalScan() {
   const [selectedSignalId, setSelectedSignalId] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [radarSignals, setRadarSignals] = useState(() =>
-    readRadarSignalsFromStorage(workshopId),
+    readRadarSignalsFromStorage(workshopId, getDefaultRadarSignals(), {
+      persistFallback: true,
+    }),
   );
   const [signalToAdd, setSignalToAdd] = useState(null);
   const [radarAnimation, setRadarAnimation] = useState(null);

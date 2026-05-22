@@ -97,4 +97,9 @@ export const swotApi = {
     api.post(`/swot/${scenarioId}/item`, { quadrant, item }),
 };
 
+export const generateScenarioWithAI = async (workshopId, radarSignals = []) => {
+  const response = await api.post(`/scenarios/${workshopId}/generate-ai`, { radarSignals });
+  return response.data;
+};
+
 export default api;

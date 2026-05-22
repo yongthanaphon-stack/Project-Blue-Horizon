@@ -57,6 +57,7 @@ export function getFocusClass(focus) {
 export function createScenarioViewModel(scenario = {}, index = 0) {
   const source = scenario || {};
   const fallback = getFallbackByScenario(source, index);
+  const hasSourceIdentity = source.id !== undefined && source.id !== null;
 
   return {
     ...fallback,
@@ -68,8 +69,12 @@ export function createScenarioViewModel(scenario = {}, index = 0) {
     probability: source.probability || fallback.probability,
     milestone: source.milestone || fallback.milestone,
     keyDrivers: source.keyDrivers?.length ? source.keyDrivers : fallback.keyDrivers,
-    relatedSignals: source.relatedSignals?.length ? source.relatedSignals : fallback.relatedSignals,
-    resultTitle: source.resultTitle || fallback.resultTitle,
+    relatedSignals: source.relatedSignals?.length
+      ? source.relatedSignals
+      : hasSourceIdentity
+        ? []
+        : fallback.relatedSignals,
+    resultTitle: source.resultTitle || source.title || fallback.resultTitle,
     visual: source.visual || fallback.visual,
   };
 }

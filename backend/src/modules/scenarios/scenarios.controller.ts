@@ -1,18 +1,22 @@
 import {
+  Body,
   Controller,
   Get,
   Post,
-  Put,
   Param,
-  Body,
-  Query,
   ParseIntPipe,
+  Put,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { AuthenticatedRequest, JwtGuard } from '../auth/jwt.guard';
 import { ScenariosService } from './scenarios.service';
-import { CreateScenarioDto, SelectScenariosDto } from './dto/scenario.dto';
+import {
+  CreateScenarioDto,
+  GenerateScenarioDto,
+  SelectScenariosDto,
+} from './dto/scenario.dto';
 
 @UseGuards(JwtGuard)
 @Controller('api/scenarios')
@@ -61,6 +65,19 @@ export class ScenariosController {
       workshopId,
       req.user.id,
       req.user.role,
+    );
+  }
+
+  @Post(':workshopId/generate-ai')
+  generateWithAI(
+    @Param('workshopId', ParseIntPipe) workshopId: number,
+    @Body() data: GenerateScenarioDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.scenariosService.generateScenarioFromAI(
+      workshopId,
+      req.user.id,
+      data.radarSignals,
     );
   }
 }

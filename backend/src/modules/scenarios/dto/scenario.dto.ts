@@ -5,7 +5,9 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateScenarioDto {
   @IsString()
@@ -43,4 +45,40 @@ export class SelectScenariosDto {
   @ArrayNotEmpty()
   @IsInt({ each: true })
   scenarioIds!: number[];
+}
+
+export class GenerateScenarioSignalDto {
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @IsString()
+  name!: string;
+
+  @IsString()
+  description!: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  horizon?: string;
+
+  @IsOptional()
+  @IsString()
+  horizonDetail?: string;
+
+  @IsOptional()
+  @IsString()
+  impactLevel?: string;
+}
+
+export class GenerateScenarioDto {
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GenerateScenarioSignalDto)
+  radarSignals?: GenerateScenarioSignalDto[];
 }
