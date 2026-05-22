@@ -7636,8 +7636,8 @@ button.ws-new-btn {
   width: 100%;
   margin: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 360px);
-  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) 600px; 
+  gap: 32px;
   align-items: start;
 }
 
@@ -7645,12 +7645,19 @@ button.ws-new-btn {
 .scenario-ref-main-layout .scenario-ref-selected-section {
   width: 100%;
   margin: 0;
+  background: #f8fafc;
+  border: 1px solid #dce5f0;
+  border-radius: 16px;
+  padding: 28px;
+  box-sizing: border-box;
 }
 
 .scenario-ref-main-layout .scenario-ref-selected-section {
   position: sticky;
   top: 24px;
-  justify-self: end;
+  justify-self: stretch;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
 }
 
 .scenario-ref-main-layout .scenario-ref-section-title {
@@ -7958,7 +7965,7 @@ button.ws-new-btn {
 
 .scenario-ref-section-title {
   gap: 12px;
-  margin: 0 0 18px 42px;
+  margin: 0 0 18px 0;
 }
 
 .scenario-ref-recommend-section {
@@ -7982,8 +7989,8 @@ button.ws-new-btn {
 
 .scenario-ref-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 32px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+  gap: 24px;
 }
 
 .scenario-ref-card {
