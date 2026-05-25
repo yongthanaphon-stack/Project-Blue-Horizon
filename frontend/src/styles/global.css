@@ -8026,6 +8026,7 @@ button.ws-new-btn {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .scenario-ref-selected p {
@@ -8037,6 +8038,7 @@ button.ws-new-btn {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 7;
+  line-clamp: 7;
 }
 
 .scenario-ref-selected .scenario-ref-driver-row {
@@ -8319,6 +8321,7 @@ button.ws-new-btn {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .scenario-ref-card-title-row button {
@@ -8341,6 +8344,7 @@ button.ws-new-btn {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 7;
+  line-clamp: 7;
 }
 
 .scenario-ref-drivers {
@@ -8539,6 +8543,7 @@ button.ws-new-btn {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
 }
 
 .scenario-save-modal-actions {
