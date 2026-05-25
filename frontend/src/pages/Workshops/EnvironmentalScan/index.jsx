@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Search, ZoomIn, ZoomOut, Maximize2, Plus, Trash2, X } from 'lucide-react';
 import { workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
-import { useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
+import { useRadarCollaboration, useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
 import {
   readRadarSignalsFromStorage,
   saveRadarSignalsToStorage,
@@ -514,6 +514,47 @@ export default function EnvironmentalScan() {
   });
   const [workshop, setWorkshop] = useState(null);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [remoteRadarNotice, setRemoteRadarNotice] = useState(null);
+
+  const handleRemoteRadarUpdate = useCallback((remoteRadarUpdate) => {
+    if (!remoteRadarUpdate || !Array.isArray(remoteRadarUpdate.signals)) return;
+
+    const syncedSignals = remoteRadarUpdate.signals;
+    saveRadarSignalsToStorage(workshopId, syncedSignals);
+    setRadarSignals(syncedSignals);
+    setSelectedSignalId(currentSignalId => {
+      if (!currentSignalId) return currentSignalId;
+
+      return syncedSignals.some(signal => signal.id === currentSignalId) ? currentSignalId : null;
+    });
+
+    if (remoteRadarUpdate.signalId && remoteRadarUpdate.action !== 'removed') {
+      setRadarAnimation({
+        signalId: remoteRadarUpdate.signalId,
+        action: remoteRadarUpdate.action || 'synced',
+        token: `${remoteRadarUpdate.signalId}-${remoteRadarUpdate.receivedAt}`,
+      });
+    }
+
+    const actionLabel = {
+      added: 'added',
+      edited: 'updated',
+      removed: 'removed',
+      synced: 'synced',
+    }[remoteRadarUpdate.action] || 'synced';
+    const actorName = remoteRadarUpdate.actor?.name || 'A teammate';
+    const signalName = remoteRadarUpdate.signalName || 'the radar';
+
+    setRemoteRadarNotice({
+      id: `${remoteRadarUpdate.clientMutationId || remoteRadarUpdate.receivedAt}`,
+      message: `${actorName} ${actionLabel} ${signalName}`,
+    });
+  }, [workshopId]);
+
+  const { sendRadarUpdate } = useRadarCollaboration(
+    workshopId || 1,
+    handleRemoteRadarUpdate,
+  );
 
   const workshopParticipants = useMemo(() => {
     if (workshop?.participants?.length) {
@@ -604,15 +645,28 @@ export default function EnvironmentalScan() {
     return () => window.clearTimeout(animationTimer);
   }, [radarAnimation]);
 
+  useEffect(() => {
+    if (!remoteRadarNotice) return undefined;
+
+    const noticeTimer = window.setTimeout(() => {
+      setRemoteRadarNotice(null);
+    }, 2600);
+
+    return () => window.clearTimeout(noticeTimer);
+  }, [remoteRadarNotice]);
+
   function handleSelectSignal(id) {
     setSelectedSignalId(id);
   }
 
-  function updateRadarSignals(updater) {
-    setRadarSignals(prevSignals => {
-      const nextSignals = updater(prevSignals);
-      saveRadarSignalsToStorage(workshopId, nextSignals);
-      return nextSignals;
+  function updateRadarSignals(updater, collaborationMeta = {}) {
+    const nextSignals = updater(radarSignals);
+
+    setRadarSignals(nextSignals);
+    saveRadarSignalsToStorage(workshopId, nextSignals);
+    sendRadarUpdate({
+      signals: nextSignals,
+      ...collaborationMeta,
     });
   }
 
@@ -668,6 +722,10 @@ export default function EnvironmentalScan() {
       }
 
       return [...prevSignals, radarSignal];
+    }, {
+      action: animationAction,
+      signalId: signalToAdd.id,
+      signalName: signalToAdd.name,
     });
 
     setSelectedSignalId(signalToAdd.id);
@@ -680,8 +738,15 @@ export default function EnvironmentalScan() {
   }
 
   function removeSignalFromRadar(signalId) {
+    const removedSignal = radarSignals.find(signal => signal.id === signalId);
+
     updateRadarSignals(prevSignals =>
       prevSignals.filter(signal => signal.id !== signalId),
+      {
+        action: 'removed',
+        signalId,
+        signalName: removedSignal?.name,
+      },
     );
 
     if (selectedSignalId === signalId) {
@@ -834,6 +899,13 @@ export default function EnvironmentalScan() {
           </div>
 
           <div className="exact-radar-canvas">
+            {remoteRadarNotice && (
+              <div className="radar-sync-toast" role="status">
+                <span />
+                {remoteRadarNotice.message}
+              </div>
+            )}
+
             {radarSignals.length === 0 && (
               <div className="radar-empty-state exact-radar-empty">
                 <strong>No signals on radar yet</strong>

@@ -56,12 +56,22 @@ type SwotActivityPayload = SwotPresencePayload & {
   itemIndex?: number | string | null;
 };
 
+type RadarUpdatePayload = WorkshopPresencePayload & {
+  signals?: unknown[];
+  action?: string;
+  signalId?: number | string | null;
+  signalName?: string | null;
+  clientMutationId?: string | null;
+};
+
 const SWOT_QUADRANTS = new Set([
   'strengths',
   'weaknesses',
   'opportunities',
   'threats',
 ]);
+
+const RADAR_ACTIONS = new Set(['added', 'edited', 'removed', 'synced']);
 
 @WebSocketGateway({
   namespace: 'notifications',
@@ -221,6 +231,36 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       client.emit('collaboration:error', {
         message: 'You do not have access to this SWOT analysis.',
       });
+    }
+  }
+
+  @SubscribeMessage('radar:update')
+  async handleRadarUpdate(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    payload: RadarUpdatePayload,
+  ) {
+    const user = this.getAuthenticatedUser(client);
+    if (!user) return;
+
+    try {
+      const workshopId = this.parsePositiveInt(payload?.workshopId);
+      await this.assertWorkshopAccess(workshopId, user);
+      await client.join(this.getWorkshopRoom(workshopId));
+
+      client.to(this.getWorkshopRoom(workshopId)).emit('radar:updated', {
+        workshopId,
+        signals: Array.isArray(payload?.signals) ? payload.signals : [],
+        action: this.parseRadarAction(payload?.action),
+        signalId: payload?.signalId ?? null,
+        signalName: payload?.signalName ?? null,
+        clientMutationId: typeof payload?.clientMutationId === 'string'
+          ? payload.clientMutationId
+          : null,
+        actor: this.toPresenceUser(user),
+        updatedAt: new Date().toISOString(),
+      });
+    } catch {
+      client.emit('collaboration:error', { message: 'Unable to sync radar update.' });
     }
   }
 
@@ -423,6 +463,14 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   private parseSwotQuadrant(value: string | undefined) {
     if (!value || !SWOT_QUADRANTS.has(value)) {
       throw new Error('Invalid SWOT quadrant');
+    }
+
+    return value;
+  }
+
+  private parseRadarAction(value: string | undefined) {
+    if (!value || !RADAR_ACTIONS.has(value)) {
+      return 'synced';
     }
 
     return value;

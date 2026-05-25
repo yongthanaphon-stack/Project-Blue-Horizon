@@ -18,6 +18,14 @@ function normalizeUsers(users = []) {
   return Array.isArray(users) ? users : [];
 }
 
+function createClientMutationId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+
+  return `mutation-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 export function useWorkshopPresenceOverview(workshopIds = []) {
   const workshopIdKey = normalizeIdList(workshopIds).join(',');
   const [presenceByWorkshopId, setPresenceByWorkshopId] = useState({});
@@ -152,4 +160,75 @@ export function useSwotCollaboration(scenarioId) {
     startActivity,
     stopActivity,
   }), [activities, startActivity, stopActivity, users]);
+}
+
+export function useRadarCollaboration(workshopId, onRemoteUpdate) {
+  const normalizedWorkshopId = normalizeId(workshopId);
+  const socketRef = useRef(null);
+  const localMutationIdsRef = useRef(new Set());
+  const onRemoteUpdateRef = useRef(onRemoteUpdate);
+  const [remoteUpdate, setRemoteUpdate] = useState(null);
+
+  useEffect(() => {
+    onRemoteUpdateRef.current = onRemoteUpdate;
+  }, [onRemoteUpdate]);
+
+  useEffect(() => {
+    if (!normalizedWorkshopId) return undefined;
+
+    let socket;
+
+    function handleRadarUpdated(update = {}) {
+      if (String(update.workshopId) !== String(normalizedWorkshopId)) return;
+      if (update.clientMutationId && localMutationIdsRef.current.has(update.clientMutationId)) return;
+
+      const updateWithReceivedAt = {
+        ...update,
+        receivedAt: Date.now(),
+      };
+
+      setRemoteUpdate(updateWithReceivedAt);
+      onRemoteUpdateRef.current?.(updateWithReceivedAt);
+    }
+
+    socket = connectNotificationSocket({
+      onConnected: () => {
+        socket?.emit('workshop:join', { workshopId: normalizedWorkshopId });
+      },
+      onRadarUpdated: handleRadarUpdated,
+    });
+    socketRef.current = socket;
+
+    return () => {
+      socket?.emit('workshop:leave', { workshopId: normalizedWorkshopId });
+      socket?.disconnect();
+      socketRef.current = null;
+    };
+  }, [normalizedWorkshopId]);
+
+  const sendRadarUpdate = useCallback((update = {}) => {
+    if (!normalizedWorkshopId || !Array.isArray(update.signals)) return null;
+
+    const clientMutationId = createClientMutationId();
+    localMutationIdsRef.current.add(clientMutationId);
+    window.setTimeout(() => {
+      localMutationIdsRef.current.delete(clientMutationId);
+    }, 10000);
+
+    socketRef.current?.emit('radar:update', {
+      workshopId: normalizedWorkshopId,
+      signals: update.signals,
+      action: update.action || 'synced',
+      signalId: update.signalId ?? null,
+      signalName: update.signalName ?? null,
+      clientMutationId,
+    });
+
+    return clientMutationId;
+  }, [normalizedWorkshopId]);
+
+  return useMemo(() => ({
+    remoteUpdate,
+    sendRadarUpdate,
+  }), [remoteUpdate, sendRadarUpdate]);
 }
