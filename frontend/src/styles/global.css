@@ -132,6 +132,12 @@ a:hover {
   color: var(--color-primary-600);
 }
 
+/* ===== BREAKPOINT SYSTEM ===== */
+/* Mobile: 320px - 639px */
+/* Tablet: 640px - 1023px */
+/* Desktop: 1024px - 1179px */
+/* XL Desktop: 1180px+ */
+
 /* ===== TYPOGRAPHY ===== */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
@@ -139,10 +145,11 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-gray-900);
 }
 
-h1 { font-size: 1.875rem; }
-h2 { font-size: 1.5rem; }
-h3 { font-size: 1.25rem; }
-h4 { font-size: 1.125rem; }
+/* Responsive Typography */
+h1 { font-size: clamp(1.5rem, 5vw, 1.875rem); }
+h2 { font-size: clamp(1.25rem, 4vw, 1.5rem); }
+h3 { font-size: clamp(1.1rem, 3.5vw, 1.25rem); }
+h4 { font-size: clamp(1rem, 3vw, 1.125rem); }
 
 .text-sm { font-size: 0.875rem; }
 .text-xs { font-size: 0.75rem; }
@@ -346,6 +353,18 @@ h4 { font-size: 1.125rem; }
   z-index: 50;
 }
 
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    padding: 0 16px;
+  }
+}
+
 .search-bar {
   flex: 1;
   max-width: 560px;
@@ -467,6 +486,18 @@ h4 { font-size: 1.125rem; }
 .main-content {
   flex: 1;
   padding: 32px;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .main-content {
+    padding: 16px;
+  }
 }
 
 /* ===== CARDS ===== */
@@ -855,6 +886,10 @@ textarea.form-input {
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius-lg);
   overflow: hidden;
+}
+
+.table-container {
+  overflow-x: auto;
 }
 
 .data-table {
@@ -2107,6 +2142,8 @@ body {
 }
 
 .signal-bank-view-toggle {
+  display: inline-flex;
+  align-items: center;
   height: 44px;
   border: 0;
   border-radius: 10px;
@@ -2972,9 +3009,31 @@ a.signal-bank-add-btn.btn-primary:hover {
     flex-direction: column;
   }
 
+  .signal-bank-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-start;
+  }
+
+  .signal-bank-view-toggle {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .signal-bank-add-btn {
+    width: 100%;
+    min-width: auto;
+  }
+
   .bank-filter-segment {
     max-width: 100%;
     overflow-x: auto;
+  }
+
+  .bank-filter-row {
+    width: 100%;
+    gap: 12px;
   }
 
   .signal-bank-grid {
@@ -2987,6 +3046,100 @@ a.signal-bank-add-btn.btn-primary:hover {
 
   .signal-bank-sort {
     flex-wrap: wrap;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .signal-bank-sort strong {
+    width: 100%;
+  }
+
+  .table-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .table-footer span {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .signal-bank-header,
+  .signal-bank-all-header {
+    align-items: stretch;
+  }
+
+  .signal-bank-header-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .signal-bank-view-toggle {
+    width: 100%;
+    padding: 4px;
+  }
+
+  .signal-bank-view-toggle button {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .signal-bank-add-btn {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+  }
+
+  .signal-bank-grid {
+    gap: 16px;
+  }
+
+  .signal-bank-card {
+    padding: 16px;
+  }
+
+  .signal-bank-card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .signal-bank-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .signal-bank-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .signal-bank-votes {
+    min-width: auto;
+  }
+
+  .signal-bank-detail-button,
+  .signal-bank-actions .btn-vote {
+    width: 100%;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 12px 12px;
+  }
+
+  .table-signal-name h4 {
+    font-size: 0.85rem;
+  }
+
+  .table-signal-name p {
+    font-size: 0.75rem;
   }
 }
 

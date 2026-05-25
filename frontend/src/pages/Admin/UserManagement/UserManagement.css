@@ -700,3 +700,40 @@
     width: 100%;
   }
 }
+
+@media (max-width: 640px) {
+  .um-page-header {
+    gap: 12px;
+  }
+
+  .um-page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .um-search {
+    width: 100%;
+  }
+
+  .um-search input {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+
+  .um-table {
+    font-size: 0.8rem;
+  }
+
+  .um-table th,
+  .um-table td {
+    padding: 12px 8px;
+  }
+
+  .um-row-actions {
+    gap: 6px;
+  }
+
+  .um-icon-button {
+    width: 36px;
+    height: 36px;
+  }
+}

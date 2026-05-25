@@ -444,3 +444,32 @@
     grid-template-columns: 118px 1fr 28px;
   }
 }
+
+@media (max-width: 640px) {
+  .dashboard-page-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .dashboard-page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .dashboard-header-actions {
+    width: 100%;
+  }
+
+  .dashboard-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .dashboard-pestel-row {
+    grid-template-columns: 100px 1fr 24px;
+  }
+
+  .dashboard-pestel-row svg {
+    width: 20px;
+    height: 20px;
+  }
+}
