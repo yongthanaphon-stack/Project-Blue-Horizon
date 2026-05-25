@@ -20,6 +20,10 @@ export function connectNotificationSocket(handlers = {}) {
   socket.on('notifications:read-all', handlers.onAllNotificationsRead || (() => {}));
   socket.on('notification:archived', handlers.onNotificationArchived || (() => {}));
   socket.on('users:presence', handlers.onPresenceUpdate || (() => {}));
+  socket.on('workshop:presence', handlers.onWorkshopPresence || (() => {}));
+  socket.on('swot:presence', handlers.onSwotPresence || (() => {}));
+  socket.on('swot:activity', handlers.onSwotActivity || (() => {}));
+  socket.on('collaboration:error', handlers.onCollaborationError || (() => {}));
   socket.on('connect_error', handlers.onConnectError || (() => {}));
   socket.on('disconnect', handlers.onDisconnected || (() => {}));
 

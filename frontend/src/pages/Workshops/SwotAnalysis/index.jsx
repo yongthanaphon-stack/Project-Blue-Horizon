@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Lightbulb, AlertTriangle, CheckCircle2, XCircle, Plus, Sparkles } from 'lucide-react';
 import { scenariosApi, swotApi, workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
+import { useAuth } from '../../../hooks/useAuth';
+import { useSwotCollaboration, useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
 import { mockScenarios, mockSwot } from '../../../mocks/mockData';
 import { createScenarioViewModel, getFocusClass } from '../scenarioData';
 
@@ -29,6 +31,15 @@ function normalizeSwot(data) {
 
 export default function SwotAnalysis() {
   const { workshopId, scenarioId } = useParams();
+  const { user: currentUser } = useAuth();
+  const typingStopTimerRef = useRef(null);
+  const { users: liveSessionUsers } = useWorkshopSessionPresence(workshopId || 1);
+  const {
+    users: liveSwotUsers,
+    activities: swotActivities,
+    startActivity,
+    stopActivity,
+  } = useSwotCollaboration(scenarioId || 1);
   const [workshop, setWorkshop] = useState(null);
   const [scenario, setScenario] = useState(INITIAL_SCENARIO);
   const [swot, setSwot] = useState(() => normalizeSwot());
@@ -79,6 +90,11 @@ export default function SwotAnalysis() {
       isMounted = false;
     };
   }, [scenarioId, workshopId]);
+
+  useEffect(() => () => {
+    window.clearTimeout(typingStopTimerRef.current);
+  }, []);
+
   const [newItems, setNewItems] = useState({ strengths: '', weaknesses: '', opportunities: '', threats: '' });
   const focusClass = getFocusClass(scenario.focus);
   const scenarioDrivers = scenario.keyDrivers || [];
@@ -94,6 +110,42 @@ export default function SwotAnalysis() {
       { id: 'fallback-1', name: 'Analyst B' },
       { id: 'fallback-2', name: 'Analyst C' },
     ];
+  const visibleWorkshopParticipants = liveSwotUsers.length
+    ? liveSwotUsers
+    : liveSessionUsers.length
+      ? liveSessionUsers
+      : workshopParticipants;
+  const currentUserId = currentUser?.id ? String(currentUser.id) : null;
+  const remoteSwotActivities = swotActivities.filter(activity => (
+    String(activity.userId) !== currentUserId
+  ));
+
+  function clearTypingStopTimer() {
+    window.clearTimeout(typingStopTimerRef.current);
+  }
+
+  function scheduleActivityStop() {
+    clearTypingStopTimer();
+    typingStopTimerRef.current = window.setTimeout(() => {
+      stopActivity();
+    }, 1800);
+  }
+
+  function handleSwotInputFocus(quadrant) {
+    clearTypingStopTimer();
+    startActivity({ quadrant, mode: 'editing' });
+  }
+
+  function handleSwotInputChange(quadrant, value) {
+    setNewItems(prev => ({ ...prev, [quadrant]: value }));
+    startActivity({ quadrant, mode: 'typing' });
+    scheduleActivityStop();
+  }
+
+  function handleSwotInputBlur() {
+    clearTypingStopTimer();
+    stopActivity();
+  }
 
   function addItem(quadrant) {
     const text = newItems[quadrant].trim();
@@ -106,6 +158,8 @@ export default function SwotAnalysis() {
 
     setSwot(nextSwot);
     setNewItems(prev => ({ ...prev, [quadrant]: '' }));
+    clearTypingStopTimer();
+    stopActivity();
 
     swotApi.update(scenarioId || 1, nextSwot).catch(() => { });
   }
@@ -183,7 +237,13 @@ export default function SwotAnalysis() {
           <p className="text-muted text-sm">{workshop?.description || 'ประชุมคณะกรรมการบริหารมหาวิทยาลัย (ก.บ.ม.) ประจำปี 2569'}</p>
         </div>
         <div className="flex items-center gap-3">
-          <WorkshopAvatarStack users={workshopParticipants} />
+          {liveSwotUsers.length > 0 && (
+            <span className="swot-live-pill">
+              <i />
+              {liveSwotUsers.length} in SWOT
+            </span>
+          )}
+          <WorkshopAvatarStack users={visibleWorkshopParticipants} />
         </div>
       </div>
 
@@ -220,47 +280,65 @@ export default function SwotAnalysis() {
 
       {/* SWOT Grid */}
       <div className="swot-grid">
-        {quadrants.map(q => (
-          <div key={q.key} className={`swot-quadrant ${q.className}`}>
-            <h3>
-              <span className="flex items-center gap-2">
-                <q.icon size={20} /> {q.title}
-              </span>
-              <span style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--color-gray-500)' }}>
-                {q.subtitle}
-              </span>
-            </h3>
-            {swotItems[q.key].map((item, i) => (
-              <div key={i} className="swot-item">
-                <q.itemIcon size={16} className="swot-item-icon" style={{ color: q.color }} />
-                <span>{item}</span>
+        {quadrants.map(q => {
+          const activeCollaborators = remoteSwotActivities.filter(activity => activity.quadrant === q.key);
+          const primaryActivity = activeCollaborators[0];
+
+          return (
+            <div key={q.key} className={`swot-quadrant ${q.className} ${primaryActivity ? 'remote-active' : ''}`}>
+              <h3>
+                <span className="flex items-center gap-2">
+                  <q.icon size={20} /> {q.title}
+                </span>
+                <span style={{ fontSize: '0.688rem', fontWeight: 600, color: 'var(--color-gray-500)' }}>
+                  {q.subtitle}
+                </span>
+              </h3>
+
+              {primaryActivity && (
+                <div className="swot-collab-indicator">
+                  <span>{primaryActivity.name?.slice(0, 2).toUpperCase() || 'BH'}</span>
+                  <strong>{primaryActivity.name || 'A teammate'}</strong>
+                  <small>{primaryActivity.mode === 'typing' ? 'is commenting...' : 'is editing this quadrant'}</small>
+                  {activeCollaborators.length > 1 && <em>+{activeCollaborators.length - 1}</em>}
+                </div>
+              )}
+
+              {swotItems[q.key].map((item, i) => (
+                <div key={i} className="swot-item">
+                  <q.itemIcon size={16} className="swot-item-icon" style={{ color: q.color }} />
+                  <span>{item}</span>
+                </div>
+              ))}
+              <div className="swot-add">
+                <div style={{ position: 'relative', flex: 1 }}>
+                  <input
+                    className={primaryActivity ? 'remote-active' : ''}
+                    placeholder={q.placeholder}
+                    value={newItems[q.key]}
+                    onFocus={() => handleSwotInputFocus(q.key)}
+                    onBlur={handleSwotInputBlur}
+                    onChange={e => handleSwotInputChange(q.key, e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addItem(q.key)}
+                    id={`add-${q.key}-input`}
+                    style={{ width: '100%', paddingRight: '40px' }}
+                  />
+                  <Sparkles size={14} style={{
+                    position: 'absolute',
+                    right: 12,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--color-gray-400)',
+                    pointerEvents: 'none'
+                  }} />
+                </div>
+                <button className="swot-add-btn" onClick={() => addItem(q.key)} id={`add-${q.key}-btn`}>
+                  <Plus size={18} />
+                </button>
               </div>
-            ))}
-            <div className="swot-add">
-              <div style={{ position: 'relative', flex: 1 }}>
-                <input
-                  placeholder={q.placeholder}
-                  value={newItems[q.key]}
-                  onChange={e => setNewItems(prev => ({ ...prev, [q.key]: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && addItem(q.key)}
-                  id={`add-${q.key}-input`}
-                  style={{ width: '100%', paddingRight: '40px' }}
-                />
-                <Sparkles size={14} style={{
-                  position: 'absolute',
-                  right: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--color-gray-400)',
-                  pointerEvents: 'none'
-                }} />
-              </div>
-              <button className="swot-add-btn" onClick={() => addItem(q.key)} id={`add-${q.key}-btn`}>
-                <Plus size={18} />
-              </button>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Save Button */}

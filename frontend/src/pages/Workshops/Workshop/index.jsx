@@ -2,8 +2,10 @@ import { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, FileText, ChevronDown } from 'lucide-react';
 import { workshopsApi } from '../../../api/api';
+import { useWorkshopPresenceOverview } from '../../../hooks/useRealtimePresence';
 import { mockOutputs, mockWorkshops } from '../../../mocks/mockData';
-import { formatDate, timeAgo } from '../../../utils/date';
+import { formatDate } from '../../../utils/date';
+import { getInitials } from '../../../utils/text';
 
 const HORIZON_CONFIG = {
   H1: { label: 'HORIZON 1', color: '#f97316', bg: '#fff7ed', border: '#fed7aa' },
@@ -15,18 +17,33 @@ const HORIZON_ORDER = { H1: 1, H2: 2, H3: 3 };
 
 const AVATAR_COLORS = ['#60a5fa', '#f59e0b', '#34d399', '#a78bfa', '#f472b6'];
 
-function AvatarStack({ count = 0 }) {
-  const visible = Math.min(count, 3);
-  const extra = count - 3;
+function AvatarStack({ count = 0, users = [] }) {
+  const visibleUsers = users.slice(0, 3);
+  const visible = visibleUsers.length || Math.min(count, 3);
+  const extra = users.length ? users.length - visibleUsers.length : count - 3;
+
   return (
     <div className="ws-avatar-stack">
-      {Array.from({ length: visible }).map((_, i) => (
-        <div
-          key={i}
-          className="ws-avatar"
-          style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length], zIndex: 10 - i }}
-        />
-      ))}
+      {visibleUsers.length ? (
+        visibleUsers.map((user, i) => (
+          <div
+            key={user.id ?? i}
+            className="ws-avatar ws-avatar-live"
+            title={user.name || `Participant ${i + 1}`}
+            style={{ background: user.avatar ? 'transparent' : AVATAR_COLORS[i % AVATAR_COLORS.length], zIndex: 10 - i }}
+          >
+            {user.avatar ? <img src={user.avatar} alt={user.name || 'Participant'} /> : getInitials(user.name)}
+          </div>
+        ))
+      ) : (
+        Array.from({ length: visible }).map((_, i) => (
+          <div
+            key={i}
+            className="ws-avatar"
+            style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length], zIndex: 10 - i }}
+          />
+        ))
+      )}
       {extra > 0 && (
         <div className="ws-avatar ws-avatar-extra">+{extra}</div>
       )}
@@ -72,7 +89,11 @@ export default function Workshop() {
 
   const displayOutputs = outputs.length ? outputs : mockOutputs;
   const visibleOutputs = showAll ? displayOutputs : displayOutputs.slice(0, 3);
-  const liveCount = displayWorkshops.filter(w => w.isActive).length;
+  const workshopIds = useMemo(() => displayWorkshops.map(workshop => workshop.id), [displayWorkshops]);
+  const presenceByWorkshopId = useWorkshopPresenceOverview(workshopIds);
+  const liveCount = displayWorkshops.filter(workshop => (
+    (presenceByWorkshopId[String(workshop.id)] || []).length > 0
+  )).length;
 
   return (
     <div className="ws-page">
@@ -107,6 +128,8 @@ export default function Workshop() {
           {displayWorkshops.map(ws => {
             const hz = HORIZON_CONFIG[ws.horizon] || HORIZON_CONFIG.H1;
             const participantCount = ws._count?.participants || 0;
+            const liveUsers = presenceByWorkshopId[String(ws.id)] || [];
+            const liveUserCount = liveUsers.length;
             return (
               <div key={ws.id} className="ws-card">
                 {/* Card top bar */}
@@ -117,7 +140,7 @@ export default function Workshop() {
                   >
                     {hz.label}
                   </span>
-                  <AvatarStack count={participantCount} />
+                  <AvatarStack count={participantCount} users={liveUsers} />
                 </div>
 
                 {/* Card body */}
@@ -128,8 +151,9 @@ export default function Workshop() {
 
                 {/* Card footer */}
                 <div className="ws-card-footer">
-                  <span className="ws-card-meta">
-                    Last active: {timeAgo(ws.lastActive || new Date())}
+                  <span className={`ws-session-presence ${liveUserCount ? 'active' : ''}`}>
+                    <i />
+                    {liveUserCount ? `${liveUserCount} in session` : `${participantCount} members`}
                   </span>
                   <Link
                     to={`/workshop/${ws.id}/radar`}

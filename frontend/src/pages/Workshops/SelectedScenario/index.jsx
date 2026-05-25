@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowRight, Bookmark, CheckCircle2, Lock, ShieldCheck } from 'lucide-react';
 import { scenariosApi, workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
+import { useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
 import { mockScenarios } from '../../../mocks/mockData';
 import { FALLBACK_SCENARIOS, createScenarioViewModel, getFocusClass } from '../scenarioData';
 
@@ -61,6 +62,7 @@ export default function SelectedScenario() {
   const { workshopId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { users: liveSessionUsers } = useWorkshopSessionPresence(workshopId || 1);
   const bookmarkStorageKey = useMemo(() => getBookmarkStorageKey(workshopId || 1), [workshopId]);
   const stateScenarios = useMemo(() => {
     if (Array.isArray(location.state?.scenarios)) {
@@ -178,6 +180,7 @@ export default function SelectedScenario() {
       { id: 'fallback-2', name: 'Analyst C' },
     ];
   }, [workshop]);
+  const visibleWorkshopParticipants = liveSessionUsers.length ? liveSessionUsers : workshopParticipants;
 
   const bookmarkedScenarioIdSet = useMemo(() => (
     new Set(bookmarkedScenarioIds)
@@ -254,7 +257,7 @@ export default function SelectedScenario() {
         </div>
 
         <div className="selected-scenario-header-actions">
-          <WorkshopAvatarStack users={workshopParticipants} />
+          <WorkshopAvatarStack users={visibleWorkshopParticipants} />
           <span className="selected-scenario-lock-pill">
             <Lock size={15} />
             {selectedScenarios.length} saved & locked

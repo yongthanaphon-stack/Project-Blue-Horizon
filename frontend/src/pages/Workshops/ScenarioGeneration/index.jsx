@@ -22,6 +22,7 @@ import {
 import { generateScenarioWithAI, scenariosApi, workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 import { useAuth } from '../../../hooks/useAuth';
+import { useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
 import { mockScenarios } from '../../../mocks/mockData';
 import { FALLBACK_SCENARIOS, createScenarioViewModel, getFocusClass } from '../scenarioData';
 import {
@@ -410,6 +411,7 @@ export default function ScenarioGeneration() {
   const navigate = useNavigate();
   const { canViewAdmin } = useAuth();
   const { showError, showSuccess } = useAlert();
+  const { users: liveSessionUsers } = useWorkshopSessionPresence(workshopId || 1);
 
   const [workshop, setWorkshop] = useState(null);
   const [scenarios, setScenarios] = useState([]);
@@ -484,6 +486,7 @@ export default function ScenarioGeneration() {
 
     return fallbackScenarioParticipants;
   }, [workshop]);
+  const visibleWorkshopParticipants = liveSessionUsers.length ? liveSessionUsers : workshopParticipants;
 
   const handleGenerateAI = async () => {
     const radarSignals = toScenarioGenerationSignals(
@@ -653,7 +656,7 @@ export default function ScenarioGeneration() {
           </div>
 
           <div className="scenario-ref-header-actions">
-            <WorkshopAvatarStack users={workshopParticipants} />
+            <WorkshopAvatarStack users={visibleWorkshopParticipants} />
             <button
               type="button"
               className={`scenario-ref-swot-btn ${canUseHeaderAction ? '' : 'disabled'}`}

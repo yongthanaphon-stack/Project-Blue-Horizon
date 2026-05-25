@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Search, ZoomIn, ZoomOut, Maximize2, Plus, Trash2, X } from 'lucide-react';
 import { workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
+import { useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
 import {
   readRadarSignalsFromStorage,
   saveRadarSignalsToStorage,
@@ -495,6 +496,7 @@ function AddToRadarModal({ signal, options, isEditing, onChange, onClose, onConf
 
 export default function EnvironmentalScan() {
   const { workshopId } = useParams();
+  const { users: liveSessionUsers } = useWorkshopSessionPresence(workshopId || 1);
   const [filter, setFilter] = useState('');
   const [selectedSignalId, setSelectedSignalId] = useState(null);
   const [zoom, setZoom] = useState(1);
@@ -527,6 +529,7 @@ export default function EnvironmentalScan() {
       name: participant,
     }));
   }, [workshop]);
+  const visibleWorkshopParticipants = liveSessionUsers.length ? liveSessionUsers : workshopParticipants;
 
   useEffect(() => {
     let isMounted = true;
@@ -822,7 +825,7 @@ export default function EnvironmentalScan() {
             </div>
 
             <div className="exact-radar-header-actions">
-              <WorkshopAvatarStack users={workshopParticipants} />
+              <WorkshopAvatarStack users={visibleWorkshopParticipants} />
 
               <Link to={`/workshop/${workshopId || 1}/scenarios`} className="btn btn-primary exact-generate-btn" id="generate-scenario-btn">
                 Generate Scenario
