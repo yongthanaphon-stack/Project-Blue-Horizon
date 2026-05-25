@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Bookmark, TrendingUp, TrendingDown, Lightbulb, AlertTriangle, CheckCircle2, XCircle, Plus, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, Lightbulb, AlertTriangle, CheckCircle2, XCircle, Plus, Sparkles } from 'lucide-react';
 import { scenariosApi, swotApi, workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 import { mockScenarios, mockSwot } from '../../../mocks/mockData';
@@ -200,7 +200,6 @@ export default function SwotAnalysis() {
         <div className="swot-summary-body">
           <div className="flex items-center justify-between mb-2">
             <h3>{scenario.title}</h3>
-            <Bookmark size={18} style={{ color: 'var(--color-gray-400)', cursor: 'pointer' }} />
           </div>
           <p style={{ fontSize: '0.875rem', color: 'var(--color-gray-600)', lineHeight: 1.6, marginBottom: 12 }}>
             {scenario.description}

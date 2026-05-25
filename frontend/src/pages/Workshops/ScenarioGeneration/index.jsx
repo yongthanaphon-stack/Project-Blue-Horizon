@@ -3,7 +3,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAlert } from '../../../hooks/useAlert';
 import {
   AlertTriangle,
-  Bookmark,
   Check,
   CheckCircle2,
   FolderPlus,
@@ -143,10 +142,6 @@ function ScenarioCard({ scenario, isSelected, isLocked, onToggle, onDetail }) {
     }
   }
 
-  function handleBookmarkClick(event) {
-    event.stopPropagation();
-  }
-
   function handleDetailClick(event) {
     event.stopPropagation();
     onDetail(scenario);
@@ -188,9 +183,6 @@ function ScenarioCard({ scenario, isSelected, isLocked, onToggle, onDetail }) {
 
         <div className="scenario-ref-card-title-row">
           <h3>{scenario.title}</h3>
-          <button type="button" aria-label={`Bookmark ${scenario.title}`} onClick={handleBookmarkClick}>
-            <Bookmark size={20} />
-          </button>
         </div>
 
         <p>{scenario.description}</p>
@@ -340,9 +332,6 @@ function ScenarioDetailPage({ scenario, onBack }) {
             <div className="scenario-result-title-row">
               <h2>{scenario.title}</h2>
               <div>
-                <button type="button" aria-label="Bookmark scenario result">
-                  <Bookmark size={21} />
-                </button>
                 <button type="button" aria-label="Share scenario result">
                   <Share2 size={21} />
                 </button>
