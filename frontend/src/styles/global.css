@@ -8333,7 +8333,7 @@ button.ws-new-btn {
 }
 
 .scenario-save-modal {
-  width: min(100%, 520px);
+  width: min(100%, 680px);
   padding: 28px;
   border: 1px solid rgba(219, 229, 240, 0.96);
   border-radius: 14px;
@@ -8383,29 +8383,39 @@ button.ws-new-btn {
   border-radius: 12px;
   background: #f8fbff;
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 
 .scenario-save-modal-count {
+  grid-column: 1 / -1;
   color: #52627a;
   font-size: 0.76rem;
   font-weight: 850;
 }
 
 .scenario-save-modal-item {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
   border-radius: 10px;
   background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
 }
 
 .scenario-save-modal-item strong {
   color: #0f172a;
-  font-size: 1rem;
+  font-size: 0.98rem;
   line-height: 1.35;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
 }
 
 .scenario-save-modal-actions {

@@ -426,7 +426,7 @@
   line-height: 1.35;
 }
 
-.profile-activity-row span,
+.profile-activity-row span:not(.profile-row-icon),
 .profile-connected-row span:not(.profile-row-icon):not(.profile-chip-success):not(.profile-chip-muted) {
   display: block;
   margin-top: 3px;
