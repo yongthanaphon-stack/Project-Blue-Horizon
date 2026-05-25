@@ -8780,7 +8780,7 @@ button.ws-new-btn {
 .scenario-result-page {
   min-height: calc(100vh - 64px);
   padding: 28px 32px 72px;
-  background: #f8fbff;
+  background: transparent;
   color: #0f172a;
 }
 
