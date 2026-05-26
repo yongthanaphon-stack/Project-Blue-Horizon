@@ -8051,8 +8051,6 @@ button.ws-new-btn {
   position: sticky;
   top: 24px;
   justify-self: stretch;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
 }
 
 .scenario-ref-main-layout .scenario-ref-section-title {
