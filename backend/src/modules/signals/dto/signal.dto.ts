@@ -20,6 +20,9 @@ import { Transform, Type } from 'class-transformer';
 function toArray(value: unknown) {
   if (Array.isArray(value)) return value;
   if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value === 'string' && value.includes(',')) {
+    return value.split(',').map(item => item.trim()).filter(Boolean);
+  }
   return [value];
 }
 
@@ -183,6 +186,29 @@ export class SignalQueryDto {
   @Type(() => Number)
   @IsNumber()
   page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  limit?: number;
+}
+
+export class TagSuggestionQueryDto {
+  @IsOptional()
+  @IsString()
+  query?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => toArray(value))
+  @IsArray()
+  @IsEnum(PestelCategory, { each: true })
+  pestel?: PestelCategory[];
+
+  @IsOptional()
+  @Transform(({ value }) => toArray(value))
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
 
   @IsOptional()
   @Type(() => Number)

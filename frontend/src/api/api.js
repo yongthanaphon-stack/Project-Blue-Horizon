@@ -68,6 +68,7 @@ export const publicSignalsApi = {
 
 export const signalsApi = {
   getAll: (params) => api.get('/signals', { params }),
+  getTagSuggestions: (params) => api.get('/signals/tags/suggestions', { params }),
   getNeedsVote: () => api.get('/signals/needs-vote'),
   getById: (id) => api.get(`/signals/${id}`),
   create: (data) => api.post('/signals', data),

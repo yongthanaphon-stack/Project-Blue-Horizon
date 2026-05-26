@@ -775,6 +775,145 @@ textarea.form-input {
   padding-left: 40px;
 }
 
+.smart-tags-input {
+  min-height: 48px;
+  padding: 7px 10px 7px 40px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background: #ffffff;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.smart-tags-input:focus-within {
+  border-color: var(--color-primary-400);
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.smart-tags-input > svg {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  width: 18px;
+  height: 18px;
+  color: var(--color-gray-400);
+}
+
+.smart-tags-input input {
+  min-width: 160px;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-gray-800);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.smart-tags-input input:disabled {
+  cursor: not-allowed;
+}
+
+.smart-tags-chip-row {
+  display: contents;
+}
+
+.smart-tag-chip {
+  min-height: 30px;
+  padding: 0 7px 0 10px;
+  border-radius: 999px;
+  background: #eaf2ff;
+  color: #0047a8;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.smart-tag-chip button {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(0, 71, 168, 0.1);
+  color: #0047a8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.smart-tags-meta {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--color-gray-500);
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.smart-tags-suggestions {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.smart-tag-suggestion {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #dbe5f0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--color-gray-700);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.smart-tag-suggestion:hover {
+  transform: translateY(-1px);
+  border-color: #a8c4f6;
+  box-shadow: 0 10px 20px rgba(0, 71, 168, 0.08);
+}
+
+.smart-tag-suggestion span {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.smart-tag-suggestion small {
+  color: var(--color-gray-500);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.smart-tag-suggestion.suggested {
+  border-color: #bcd3ff;
+  background: #f4f8ff;
+}
+
+.smart-tag-suggestion.related {
+  border-color: #c8e6d7;
+  background: #f4fbf7;
+}
+
 /* ===== CHECKBOX ===== */
 .checkbox-grid {
   display: grid;

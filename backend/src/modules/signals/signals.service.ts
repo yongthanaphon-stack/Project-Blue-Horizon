@@ -6,6 +6,7 @@ import {
   UpdateSignalDto,
   VoteSignalDto,
   SignalQueryDto,
+  TagSuggestionQueryDto,
 } from './dto/signal.dto';
 import { PestelCategory, Prisma } from '@prisma/client';
 
@@ -87,6 +88,18 @@ type SignalPresentationFields = {
   totalVotes?: number | null;
 };
 
+type TagSuggestionItem = {
+  tag: string;
+  count: number;
+  score: number;
+  source: 'suggested' | 'related' | 'popular';
+};
+
+type TagSignalSource = {
+  tags: string[];
+  pestelCategories: PestelCategory[];
+};
+
 function getCommunityInterest(totalVotes?: number | null): number {
   const votes = Number(totalVotes || 0);
   if (votes <= 0) return 0;
@@ -124,6 +137,63 @@ function buildSignalSearchConditions(search: string): Prisma.SignalWhereInput[] 
   }
 
   return conditions;
+}
+
+function normalizeTag(tag: unknown) {
+  return String(tag || '')
+    .trim()
+    .replace(/^#+/, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function normalizeTagList(tags: unknown[] = [], limit = 12) {
+  const normalizedTags: string[] = [];
+  const seenTags = new Set<string>();
+
+  tags.forEach(tag => {
+    const normalizedTag = normalizeTag(tag);
+    if (!normalizedTag || seenTags.has(normalizedTag)) return;
+
+    seenTags.add(normalizedTag);
+    normalizedTags.push(normalizedTag);
+  });
+
+  return normalizedTags.slice(0, limit);
+}
+
+function incrementTagCount(counts: Map<string, number>, tag: string, amount = 1) {
+  counts.set(tag, (counts.get(tag) || 0) + amount);
+}
+
+function rankTagCounts(
+  counts: Map<string, number>,
+  source: TagSuggestionItem['source'],
+  {
+    query = '',
+    excludeTags = new Set<string>(),
+    limit = 8,
+  }: {
+    query?: string;
+    excludeTags?: Set<string>;
+    limit?: number;
+  } = {},
+) {
+  const normalizedQuery = normalizeTag(query);
+
+  return Array.from(counts.entries())
+    .filter(([tag]) => !excludeTags.has(tag))
+    .filter(([tag]) => !normalizedQuery || tag.includes(normalizedQuery))
+    .sort(([tagA, countA], [tagB, countB]) => (
+      countB - countA || tagA.localeCompare(tagB)
+    ))
+    .slice(0, limit)
+    .map(([tag, count]) => ({
+      tag,
+      count,
+      score: count,
+      source,
+    }));
 }
 
 type Sanitizer = {
@@ -233,6 +303,81 @@ export class SignalsService {
     });
 
     return suggestions.map(withSignalPresentation);
+  }
+
+  async findTagSuggestions(query: TagSuggestionQueryDto = {}) {
+    const limit = Math.min(Math.max(Number(query.limit) || 8, 1), 12);
+    const selectedTags = new Set(normalizeTagList(query.tags || []));
+    const pestelInput = Array.isArray(query.pestel)
+      ? query.pestel
+      : query.pestel
+        ? [query.pestel]
+        : [];
+    const pestelCategories = new Set(pestelInput);
+
+    const signals = await this.prisma.signal.findMany({
+      where: {
+        deletedAt: null,
+        isGlobal: true,
+        status: 'PUBLISHED',
+        workshopId: null,
+        tags: { isEmpty: false },
+      },
+      select: {
+        tags: true,
+        pestelCategories: true,
+      },
+      take: 500,
+      orderBy: [
+        { updatedAt: 'desc' },
+        { id: 'desc' },
+      ],
+    });
+
+    const popularCounts = new Map<string, number>();
+    const categoryCounts = new Map<string, number>();
+    const relatedCounts = new Map<string, number>();
+
+    signals.forEach((signal: TagSignalSource) => {
+      const signalTags = normalizeTagList(signal.tags, 24);
+      const hasSelectedTag = signalTags.some(tag => selectedTags.has(tag));
+      const isCategoryMatch = pestelCategories.size === 0
+        ? false
+        : signal.pestelCategories.some(category => pestelCategories.has(category));
+
+      signalTags.forEach(tag => {
+        incrementTagCount(popularCounts, tag);
+
+        if (isCategoryMatch) {
+          incrementTagCount(categoryCounts, tag);
+        }
+
+        if (hasSelectedTag && !selectedTags.has(tag)) {
+          incrementTagCount(relatedCounts, tag);
+        }
+      });
+    });
+
+    const suggested = rankTagCounts(categoryCounts, 'suggested', {
+      query: query.query,
+      excludeTags: selectedTags,
+      limit,
+    });
+    const related = rankTagCounts(relatedCounts, 'related', {
+      query: query.query,
+      excludeTags: selectedTags,
+      limit,
+    });
+    const popular = rankTagCounts(popularCounts, 'popular', {
+      query: query.query,
+      limit,
+    });
+
+    return {
+      suggested: suggested.length ? suggested : popular.slice(0, limit),
+      related,
+      popular,
+    };
   }
 
   async findAll(query: SignalQueryDto) {
@@ -364,7 +509,7 @@ export class SignalsService {
         description: safeDescription,
         pestelCategories: signalData.pestelCategories || [],
         stakeholders: signalData.stakeholders || [],
-        tags: tags || [],
+        tags: normalizeTagList(tags || []),
         isGlobal: signalData.isGlobal || false,
         ownerId: userId,
         impactScore: 0,
@@ -414,7 +559,7 @@ export class SignalsService {
       where: { id },
       data: {
         ...signalData,
-        ...(tags ? { tags } : {}),
+        ...(tags ? { tags: normalizeTagList(tags) } : {}),
         histories: {
           create: {
             action: 'UPDATED',

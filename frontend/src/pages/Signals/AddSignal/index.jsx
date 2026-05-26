@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Link2, Tag } from 'lucide-react';
+import { Link2, Tag, X } from 'lucide-react';
 import { signalsApi } from '../../../api/api';
 
 const PESTEL_OPTIONS = [
@@ -30,6 +30,59 @@ const DEFAULT_SIGNAL_FORM = {
   isGlobal: true,
 };
 
+const TAG_LIMIT = 12;
+const EMPTY_TAG_SUGGESTIONS = {
+  suggested: [],
+  related: [],
+  popular: [],
+};
+
+function normalizeTagValue(value = '') {
+  return String(value)
+    .trim()
+    .replace(/^#+/, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function normalizeTags(tags = []) {
+  const tagSource = Array.isArray(tags) ? tags : String(tags).split(',');
+  const seenTags = new Set();
+  const normalizedTags = [];
+
+  tagSource.forEach(tag => {
+    const normalizedTag = normalizeTagValue(tag);
+    if (!normalizedTag || seenTags.has(normalizedTag)) return;
+
+    seenTags.add(normalizedTag);
+    normalizedTags.push(normalizedTag);
+  });
+
+  return normalizedTags.slice(0, TAG_LIMIT);
+}
+
+function formatTagLabel(tag = '') {
+  return String(tag)
+    .split(' ')
+    .map(part => {
+      if (!part) return '';
+      return part.length <= 3 ? part.toUpperCase() : `${part.charAt(0).toUpperCase()}${part.slice(1)}`;
+    })
+    .join(' ');
+}
+
+function flattenSuggestionGroups(groups) {
+  const seenTags = new Set();
+
+  return ['suggested', 'related', 'popular'].flatMap(groupKey => (
+    (groups[groupKey] || []).filter(item => {
+      if (!item?.tag || seenTags.has(item.tag)) return false;
+      seenTags.add(item.tag);
+      return true;
+    }).map(item => ({ ...item, groupKey }))
+  ));
+}
+
 export default function AddSignal() {
   const navigate = useNavigate();
   const [form, setForm] = useState(() => {
@@ -39,7 +92,8 @@ export default function AddSignal() {
         const savedDraft = JSON.parse(saved);
         if (savedDraft && typeof savedDraft === 'object' && !Array.isArray(savedDraft)) {
           delete savedDraft.impactScore;
-          return { ...DEFAULT_SIGNAL_FORM, ...savedDraft };
+          const normalizedDraft = { ...DEFAULT_SIGNAL_FORM, ...savedDraft };
+          return { ...normalizedDraft, tags: normalizeTags(normalizedDraft.tags) };
         }
       } catch {
         localStorage.removeItem('addSignalDraft');
@@ -50,10 +104,53 @@ export default function AddSignal() {
   
   const [saving, setSaving] = useState(false);
   const [titleError, setTitleError] = useState('');
+  const [tagInput, setTagInput] = useState('');
+  const [tagSuggestions, setTagSuggestions] = useState(EMPTY_TAG_SUGGESTIONS);
+  const [tagSuggestionsLoading, setTagSuggestionsLoading] = useState(false);
+  const pestelKey = form.pestelCategories.join(',');
+  const tagKey = form.tags.join(',');
+  const visibleTagSuggestions = useMemo(() => (
+    flattenSuggestionGroups(tagSuggestions)
+      .filter(item => !form.tags.includes(item.tag))
+      .slice(0, 12)
+  ), [form.tags, tagSuggestions]);
 
   useEffect(() => {
     localStorage.setItem('addSignalDraft', JSON.stringify(form));
   }, [form]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const debounceTimer = window.setTimeout(async () => {
+      setTagSuggestionsLoading(true);
+
+      try {
+        const response = await signalsApi.getTagSuggestions({
+          query: tagInput.trim() || undefined,
+          pestel: pestelKey || undefined,
+          tags: tagKey || undefined,
+          limit: 8,
+        });
+
+        if (!isMounted) return;
+        setTagSuggestions(response.data || EMPTY_TAG_SUGGESTIONS);
+      } catch (error) {
+        console.warn('Failed to load tag suggestions.', error);
+        if (isMounted) {
+          setTagSuggestions(EMPTY_TAG_SUGGESTIONS);
+        }
+      } finally {
+        if (isMounted) {
+          setTagSuggestionsLoading(false);
+        }
+      }
+    }, 220);
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(debounceTimer);
+    };
+  }, [pestelKey, tagInput, tagKey]);
 
   function updateField(field, value) {
     if (field === 'name') {
@@ -63,10 +160,46 @@ export default function AddSignal() {
     setForm(prev => ({ ...prev, [field]: value }));
   }
 
-  function handleTagsChange(e) {
-    const value = e.target.value;
-    const tagsArray = value.split(',').map(t => t.trim()).filter(t => t);
-    setForm(prev => ({ ...prev, tags: tagsArray }));
+  function updateTags(tags) {
+    setForm(prev => ({ ...prev, tags: normalizeTags(tags) }));
+  }
+
+  function addTag(rawTag) {
+    const normalizedTag = normalizeTagValue(rawTag);
+    if (!normalizedTag) return;
+
+    updateTags([...form.tags, normalizedTag]);
+    setTagInput('');
+  }
+
+  function removeTag(tagToRemove) {
+    updateTags(form.tags.filter(tag => tag !== tagToRemove));
+  }
+
+  function handleTagInputChange(event) {
+    const value = event.target.value;
+
+    if (value.includes(',')) {
+      const tagParts = value.split(',');
+      const completedTags = tagParts.slice(0, -1);
+      updateTags([...form.tags, ...completedTags]);
+      setTagInput(tagParts.at(-1) || '');
+      return;
+    }
+
+    setTagInput(value);
+  }
+
+  function handleTagKeyDown(event) {
+    if (event.key === 'Enter' || event.key === ',') {
+      event.preventDefault();
+      addTag(tagInput);
+      return;
+    }
+
+    if (event.key === 'Backspace' && !tagInput && form.tags.length) {
+      removeTag(form.tags[form.tags.length - 1]);
+    }
   }
 
   function togglePestel(cat) {
@@ -97,6 +230,7 @@ export default function AddSignal() {
       const isPublishedSignal = status === 'PUBLISHED';
       const signalPayload = {
         ...form,
+        tags: normalizeTags(form.tags),
         status,
         isGlobal: isPublishedSignal ? true : form.isGlobal,
       };
@@ -184,18 +318,57 @@ export default function AddSignal() {
 
         {/* Tags */}
         <div className="form-group">
-          <label className="form-label" htmlFor="tags">Tags (comma separated)</label>
-          <div className="form-url-input">
+          <label className="form-label" htmlFor="tags">Smart Tags</label>
+          <div className="smart-tags-input">
             <Tag />
+            <div className="smart-tags-chip-row">
+              {form.tags.map(tag => (
+                <span key={tag} className="smart-tag-chip">
+                  {formatTagLabel(tag)}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    aria-label={`Remove ${tag}`}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
             <input
               id="tags"
-              className="form-input"
-              style={{ paddingLeft: 40 }}
-              placeholder="e.g., AI, Automation, Policy"
-              value={form.tags.join(', ')}
-              onChange={handleTagsChange}
+              placeholder={form.tags.length ? 'Add another tag...' : 'Type a tag, then press Enter'}
+              value={tagInput}
+              onChange={handleTagInputChange}
+              onKeyDown={handleTagKeyDown}
+              disabled={form.tags.length >= TAG_LIMIT}
             />
           </div>
+          <div className="smart-tags-meta">
+            <span>{form.tags.length}/{TAG_LIMIT} tags</span>
+            {tagSuggestionsLoading && <span>Loading suggestions...</span>}
+          </div>
+          {visibleTagSuggestions.length > 0 && (
+            <div className="smart-tags-suggestions">
+              {visibleTagSuggestions.map(item => (
+                <button
+                  key={`${item.groupKey}-${item.tag}`}
+                  type="button"
+                  className={`smart-tag-suggestion ${item.groupKey}`}
+                  onClick={() => addTag(item.tag)}
+                >
+                  <span>{formatTagLabel(item.tag)}</span>
+                  <small>
+                    {item.groupKey === 'suggested'
+                      ? 'Suggested'
+                      : item.groupKey === 'related'
+                        ? 'Related'
+                        : 'Popular'} · {item.count}
+                  </small>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* PESTEL Categories */}

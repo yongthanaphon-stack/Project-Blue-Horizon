@@ -19,6 +19,7 @@ import {
   UpdateSignalDto,
   VoteSignalDto,
   SignalQueryDto,
+  TagSuggestionQueryDto,
 } from './dto/signal.dto';
 
 @UseGuards(JwtGuard)
@@ -34,6 +35,11 @@ export class SignalsController {
   @Get('needs-vote')
   findNeedsVote(@Request() req: AuthenticatedRequest) {
     return this.signalsService.findNeedsVote(req.user.id);
+  }
+
+  @Get('tags/suggestions')
+  findTagSuggestions(@Query() query: TagSuggestionQueryDto) {
+    return this.signalsService.findTagSuggestions(query);
   }
 
   @Get(':id')
