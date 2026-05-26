@@ -15,6 +15,7 @@ import {
 } from '../../core/presence/presence.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { AuthenticatedUser } from '../auth/jwt.guard';
+import { getCorsOrigins } from '../../app/cors-origins';
 
 type JwtPayload = {
   user: AuthenticatedUser;
@@ -76,7 +77,7 @@ const RADAR_ACTIONS = new Set(['added', 'edited', 'removed', 'synced']);
 @WebSocketGateway({
   namespace: 'notifications',
   cors: {
-    origin: [/^http:\/\/localhost:\d+$/, /^http:\/\/127\.0\.0\.1:\d+$/],
+    origin: getCorsOrigins(),
     credentials: true,
   },
 })

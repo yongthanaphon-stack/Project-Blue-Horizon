@@ -1,7 +1,6 @@
 import { io } from 'socket.io-client';
 import { getAuthToken } from '../utils/authStorage';
-
-const NOTIFICATION_SOCKET_URL = 'http://localhost:3001/notifications';
+import { NOTIFICATION_SOCKET_URL } from './config';
 
 export function connectNotificationSocket(handlers = {}) {
   const token = getAuthToken();
