@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Info, LayoutGrid, List, Plus, ThumbsUp } from 'lucide-react';
+import { Info, LayoutGrid, List, Plus, ThumbsUp } from 'lucide-react';
 import { signalsApi } from '../../../api/api';
 import { truncateText } from '../../../utils/text';
 
@@ -15,6 +15,8 @@ const PESTEL_FILTERS = [
 
 const IMPACT_FILTERS = ['Global', 'Region', 'Country'];
 const HORIZON_FILTERS = ['H1', 'H2', 'H3'];
+const NEW_SIGNAL_CARD_LIMIT = 3;
+const SIGNALS_FETCH_LIMIT = 100;
 const PESTEL_FILTER_VALUES = new Set(PESTEL_FILTERS.map(filter => filter.value));
 const PESTEL_QUERY_ALIASES = {
   ECONOMY: 'ECONOMIC',
@@ -195,31 +197,50 @@ export default function SignalBank() {
   const activeSearch = getSearchFromParams(searchParams);
   const [activeImpact, setActiveImpact] = useState(null);
   const [activeHorizon, setActiveHorizon] = useState(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadSignals() {
       try {
+        setLoading(true);
+        const query = {
+          page: 1,
+          limit: SIGNALS_FETCH_LIMIT,
+          search: activeSearch || undefined,
+          pestel: activePestel || undefined,
+          impact: activeImpact?.toUpperCase() || undefined,
+          horizon: activeHorizon || undefined,
+        };
+
         const [signalsResponse, needsVoteResponse] = await Promise.all([
-          signalsApi.getAll({ 
-            page, 
-            limit: 20,
-            search: activeSearch || undefined,
-            pestel: activePestel || undefined,
-            impact: activeImpact?.toUpperCase() || undefined,
-            horizon: activeHorizon || undefined,
-          }),
+          signalsApi.getAll(query),
           signalsApi.getNeedsVote(),
         ]);
 
         if (!isMounted) return;
 
-        setSignals(normalizeSignals(signalsResponse.data?.data || []));
+        const firstPageSignals = signalsResponse.data?.data || [];
+        const totalPages = signalsResponse.data?.meta?.totalPages || 1;
+        let allSignals = firstPageSignals;
+
+        if (totalPages > 1) {
+          const remainingResponses = await Promise.all(
+            Array.from({ length: totalPages - 1 }, (_, index) => (
+              signalsApi.getAll({ ...query, page: index + 2 })
+            ))
+          );
+
+          if (!isMounted) return;
+
+          allSignals = [
+            ...firstPageSignals,
+            ...remainingResponses.flatMap(response => response.data?.data || []),
+          ];
+        }
+
+        setSignals(normalizeSignals(allSignals));
         setNeedsVote(normalizeSignals(needsVoteResponse.data || []));
-        setTotalPages(signalsResponse.data?.meta?.totalPages || 1);
       } catch (error) {
         console.error('Failed to load signals', error);
       } finally {
@@ -230,14 +251,18 @@ export default function SignalBank() {
     loadSignals();
 
     return () => { isMounted = false; };
-  }, [page, activePestel, activeImpact, activeHorizon, activeSearch]);
+  }, [activePestel, activeImpact, activeHorizon, activeSearch]);
 
   const displayNeedsVote = useMemo(() => {
     return filterSignals(needsVote, { activePestel, activeImpact, activeHorizon, activeSearch });
   }, [activeHorizon, activeImpact, activePestel, activeSearch, needsVote]);
 
+  const visibleNeedsVote = useMemo(() => {
+    return displayNeedsVote.slice(0, NEW_SIGNAL_CARD_LIMIT);
+  }, [displayNeedsVote]);
+
   const displaySignals = signals; // Server-side filtering already applied
-  const showNeedsVoteSection = view === 'card' && !loading && displayNeedsVote.length > 0;
+  const showNeedsVoteSection = view === 'card' && !loading && visibleNeedsVote.length > 0;
 
   function handlePestelFilter(nextPestel) {
     const nextParams = new URLSearchParams(searchParams);
@@ -249,7 +274,6 @@ export default function SignalBank() {
     }
 
     setSearchParams(nextParams, { replace: true });
-    setPage(1);
   }
 
   return (
@@ -312,7 +336,6 @@ export default function SignalBank() {
                 className={activeImpact === filter ? 'active' : ''}
                 onClick={() => {
                   setActiveImpact(activeImpact === filter ? null : filter);
-                  setPage(1);
                 }}
               >
                 {filter}
@@ -330,7 +353,6 @@ export default function SignalBank() {
                 className={activeHorizon === filter ? 'active' : ''}
                 onClick={() => {
                   setActiveHorizon(activeHorizon === filter ? null : filter);
-                  setPage(1);
                 }}
               >
                 {filter}
@@ -347,7 +369,7 @@ export default function SignalBank() {
             <span className="badge badge-action">{displayNeedsVote.length} ACTION REQUIRED</span>
           </div>
           <div className="signals-grid signal-bank-grid">
-            {displayNeedsVote.map((signal) => (
+            {visibleNeedsVote.map((signal) => (
               <SignalCard
                 key={signal.id}
                 signal={signal}
@@ -437,24 +459,6 @@ export default function SignalBank() {
             </table>
             <div className="table-footer">
               <span>Showing {displaySignals.length} signals</span>
-              <div className="pagination">
-                <button type="button" className="page-btn" disabled={page <= 1} onClick={() => setPage(prev => Math.max(1, prev - 1))}>
-                  <ChevronLeft size={14} />
-                </button>
-                {Array.from({ length: totalPages }, (_, index) => index + 1).map(nextPage => (
-                  <button
-                    key={nextPage}
-                    type="button"
-                    className={`page-btn ${page === nextPage ? 'active' : ''}`}
-                    onClick={() => setPage(nextPage)}
-                  >
-                    {nextPage}
-                  </button>
-                ))}
-                <button type="button" className="page-btn" disabled={page >= totalPages} onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}>
-                  <ChevronRight size={14} />
-                </button>
-              </div>
             </div>
           </div>
         ) : (
@@ -472,24 +476,6 @@ export default function SignalBank() {
             </div>
             <div className="table-footer" style={{ marginTop: '20px' }}>
               <span>Showing {displaySignals.length} signals</span>
-              <div className="pagination">
-                <button type="button" className="page-btn" disabled={page <= 1} onClick={() => setPage(prev => Math.max(1, prev - 1))}>
-                  <ChevronLeft size={14} />
-                </button>
-                {Array.from({ length: totalPages }, (_, index) => index + 1).map(nextPage => (
-                  <button
-                    key={nextPage}
-                    type="button"
-                    className={`page-btn ${page === nextPage ? 'active' : ''}`}
-                    onClick={() => setPage(nextPage)}
-                  >
-                    {nextPage}
-                  </button>
-                ))}
-                <button type="button" className="page-btn" disabled={page >= totalPages} onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}>
-                  <ChevronRight size={14} />
-                </button>
-              </div>
             </div>
           </>
         )}
