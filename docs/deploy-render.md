@@ -58,3 +58,16 @@ The frontend reads `VITE_API_ORIGIN` at build time. In `render.yaml`, it is wire
 When running on Render, the backend allows `https://*.onrender.com` origins for
 quick demo deploys. For a custom frontend domain, add that exact origin to
 `CORS_ORIGINS` on the `blue-horizon-api` service.
+
+## Troubleshooting
+
+If `blue-horizon-web` shows `Not Found`, open the service in Render and check
+the latest deploy. The static frontend should use:
+
+- Root Directory: `frontend`
+- Build Command: `npm ci && npm run build`
+- Publish Directory: `./dist`
+- Rewrite Rule: source `/*`, destination `/index.html`, action `Rewrite`
+
+If these values differ, click `Sync Blueprint` from the Blueprint page or update
+the static site settings manually, then redeploy `blue-horizon-web`.
