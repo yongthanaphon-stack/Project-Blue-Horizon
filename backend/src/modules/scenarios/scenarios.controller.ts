@@ -16,6 +16,7 @@ import {
   CreateScenarioDto,
   GenerateScenarioDto,
   SelectScenariosDto,
+  UpdateScenarioDto,
 } from './dto/scenario.dto';
 
 @UseGuards(JwtGuard)
@@ -66,6 +67,15 @@ export class ScenariosController {
       req.user.id,
       req.user.role,
     );
+  }
+
+  @Put(':id')
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: UpdateScenarioDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.scenariosService.update(id, data, req.user.role);
   }
 
   @Post(':workshopId/generate-ai')

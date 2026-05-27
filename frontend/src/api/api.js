@@ -88,6 +88,7 @@ export const scenariosApi = {
   getByWorkshop: (workshopId) => api.get(`/scenarios?workshopId=${workshopId}`),
   getById: (id) => api.get(`/scenarios/${id}`),
   create: (data) => api.post('/scenarios', data),
+  update: (id, data) => api.put(`/scenarios/${id}`, data),
   select: (id, workshopId) => api.put(`/scenarios/${id}/select`, { workshopId }),
   selectMany: (workshopId, scenarioIds) => api.put('/scenarios/selected', { workshopId, scenarioIds }),
 };

@@ -10,6 +10,7 @@ import {
   Loader2,
   Lock,
   Maximize2,
+  Pencil,
   Plus,
   Save,
   Share2,
@@ -70,6 +71,31 @@ const fallbackScenarioParticipants = [
 function getApiErrorMessage(error, fallback) {
   const message = error?.response?.data?.message || error?.response?.data?.error || error?.message;
   return message || fallback;
+}
+
+function createScenarioEditForm(scenario) {
+  return {
+    title: scenario?.title || '',
+    description: scenario?.description || '',
+    focus: scenario?.focus || '',
+    probability: scenario?.probability || '',
+    milestone: scenario?.milestone || '',
+    keyDriversText: (scenario?.keyDrivers || []).join('\n'),
+  };
+}
+
+function getScenarioEditPayload(form) {
+  return {
+    title: form.title.trim(),
+    description: form.description.trim(),
+    focus: form.focus.trim(),
+    probability: form.probability.trim(),
+    milestone: form.milestone.trim(),
+    keyDrivers: form.keyDriversText
+      .split(/\n+/)
+      .map(driver => driver.trim())
+      .filter(Boolean),
+  };
 }
 
 function SelectedScenarioBox({ scenarios, onRemoveScenario, isLocked }) {
@@ -281,13 +307,53 @@ function VariationPriorityDots({ priority }) {
   );
 }
 
-function ScenarioDetailPage({ scenario, onBack }) {
+function ScenarioDetailPage({
+  scenario,
+  onBack,
+  canEdit,
+  isSavingEdit,
+  onSave,
+  onValidationError,
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [form, setForm] = useState(() => createScenarioEditForm(scenario));
+
+  const previewScenario = isEditing
+    ? {
+        ...scenario,
+        ...getScenarioEditPayload(form),
+      }
+    : scenario;
   const signalChips = scenario.relatedSignals || [];
-  const keyDrivers = scenario.keyDrivers || [];
-  const descriptionParagraphs = String(scenario.description || '')
+  const keyDrivers = previewScenario.keyDrivers || [];
+  const descriptionParagraphs = String(previewScenario.description || '')
     .split(/\n{2,}/)
     .map(paragraph => paragraph.trim())
     .filter(Boolean);
+
+  function updateFormField(field, value) {
+    setForm(prevForm => ({
+      ...prevForm,
+      [field]: value,
+    }));
+  }
+
+  async function saveScenarioEdits() {
+    const payload = getScenarioEditPayload(form);
+    const hasRequiredFields = payload.title
+      && payload.description
+      && payload.focus
+      && payload.probability
+      && payload.milestone;
+
+    if (!hasRequiredFields) {
+      onValidationError('Title, description, focus, probability, and milestone are required.');
+      return;
+    }
+
+    await onSave(scenario.id, payload);
+    setIsEditing(false);
+  }
 
   return (
     <div className="scenario-result-page">
@@ -301,23 +367,36 @@ function ScenarioDetailPage({ scenario, onBack }) {
 
       <header className="scenario-result-header">
         <div>
-          <h1>Scenario Detail: {scenario.title}</h1>
+          <h1>Scenario Detail: {previewScenario.title}</h1>
           <p>
             AI-generated scenario details synthesized from this workshop's signal set.
           </p>
         </div>
 
-        <button type="button" className="scenario-result-back" onClick={onBack}>
-          Back
-        </button>
+        <div className="scenario-result-header-actions">
+          {canEdit && !isEditing && (
+            <button
+              type="button"
+              className="scenario-result-edit-toggle"
+              onClick={() => setIsEditing(true)}
+            >
+              <Pencil size={16} />
+              Edit
+            </button>
+          )}
+
+          <button type="button" className="scenario-result-back" onClick={onBack}>
+            Back
+          </button>
+        </div>
       </header>
 
       <div className="scenario-result-layout">
         <article className="scenario-result-main-card">
           <div className="scenario-result-hero">
             <div className="scenario-result-badges">
-              <span>{scenario.probability || 'Probability pending'}</span>
-              <span>{scenario.milestone || 'Milestone pending'}</span>
+              <span>{previewScenario.probability || 'Probability pending'}</span>
+              <span>{previewScenario.milestone || 'Milestone pending'}</span>
             </div>
 
             <div className="scenario-result-hero-icon" aria-hidden="true">
@@ -331,31 +410,129 @@ function ScenarioDetailPage({ scenario, onBack }) {
 
           <div className="scenario-result-body">
             <div className="scenario-result-title-row">
-              <h2>{scenario.title}</h2>
-              <div>
-                <button type="button" aria-label="Share scenario result">
-                  <Share2 size={21} />
-                </button>
-              </div>
+              <h2>{previewScenario.title}</h2>
+
+              {isEditing ? (
+                <div className="scenario-result-edit-actions">
+                  <button
+                    type="button"
+                    className="scenario-result-edit-cancel"
+                    onClick={() => {
+                      setForm(createScenarioEditForm(scenario));
+                      setIsEditing(false);
+                    }}
+                    disabled={isSavingEdit}
+                  >
+                    <X size={16} />
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="scenario-result-edit-save"
+                    onClick={saveScenarioEdits}
+                    disabled={isSavingEdit}
+                  >
+                    <Save size={16} />
+                    {isSavingEdit ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <button type="button" aria-label="Share scenario result">
+                    <Share2 size={21} />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {descriptionParagraphs.length ? (
-              descriptionParagraphs.map(paragraph => (
-                <p key={paragraph}>{paragraph}</p>
-              ))
+            {isEditing ? (
+              <div className="scenario-result-edit-form">
+                <label className="scenario-result-edit-field scenario-result-edit-field-full">
+                  <span>Title</span>
+                  <input
+                    value={form.title}
+                    onChange={event => updateFormField('title', event.target.value)}
+                    disabled={isSavingEdit}
+                  />
+                </label>
+
+                <label className="scenario-result-edit-field scenario-result-edit-field-full">
+                  <span>Description</span>
+                  <textarea
+                    rows={8}
+                    value={form.description}
+                    onChange={event => updateFormField('description', event.target.value)}
+                    disabled={isSavingEdit}
+                  />
+                </label>
+
+                <div className="scenario-result-edit-grid">
+                  <label className="scenario-result-edit-field">
+                    <span>Probability</span>
+                    <input
+                      value={form.probability}
+                      onChange={event => updateFormField('probability', event.target.value)}
+                      disabled={isSavingEdit}
+                    />
+                  </label>
+
+                  <label className="scenario-result-edit-field">
+                    <span>Milestone</span>
+                    <input
+                      value={form.milestone}
+                      onChange={event => updateFormField('milestone', event.target.value)}
+                      disabled={isSavingEdit}
+                    />
+                  </label>
+
+                  <label className="scenario-result-edit-field">
+                    <span>Focus</span>
+                    <input
+                      value={form.focus}
+                      onChange={event => updateFormField('focus', event.target.value)}
+                      disabled={isSavingEdit}
+                    />
+                  </label>
+                </div>
+
+                <label className="scenario-result-edit-field scenario-result-edit-field-full">
+                  <span>Key drivers</span>
+                  <textarea
+                    rows={5}
+                    value={form.keyDriversText}
+                    onChange={event => updateFormField('keyDriversText', event.target.value)}
+                    disabled={isSavingEdit}
+                  />
+                </label>
+              </div>
             ) : (
-              <p>No generated description is available for this scenario yet.</p>
-            )}
+              <>
+                {descriptionParagraphs.length ? (
+                  descriptionParagraphs.map(paragraph => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))
+                ) : (
+                  <p>No generated description is available for this scenario yet.</p>
+                )}
 
-            <div className="scenario-result-related">
-              <h3>KEY DRIVERS</h3>
-              <div>
-                {keyDrivers.map(driver => (
-                  <span key={driver}>{driver}</span>
-                ))}
-                {!keyDrivers.length && <span>No key drivers provided</span>}
-              </div>
-            </div>
+                <div className="scenario-result-related">
+                  <h3>FOCUS</h3>
+                  <div>
+                    <span>{previewScenario.focus || 'Focus pending'}</span>
+                  </div>
+                </div>
+
+                <div className="scenario-result-related">
+                  <h3>KEY DRIVERS</h3>
+                  <div>
+                    {keyDrivers.map(driver => (
+                      <span key={driver}>{driver}</span>
+                    ))}
+                    {!keyDrivers.length && <span>No key drivers provided</span>}
+                  </div>
+                </div>
+              </>
+            )}
 
             {signalChips.length > 0 && (
               <div className="scenario-result-related">
@@ -422,6 +599,7 @@ export default function ScenarioGeneration() {
   const [detailScenario, setDetailScenario] = useState(null);
   const [accessDenied, setAccessDenied] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [isUpdatingScenario, setIsUpdatingScenario] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -449,19 +627,23 @@ export default function ScenarioGeneration() {
         const response = await scenariosApi.getByWorkshop(workshopId || 1);
         const apiScenarios = response.data || [];
         const sourceScenarios = apiScenarios.length ? apiScenarios : FALLBACK_SCENARIOS;
+        const scenarioViewModels = sourceScenarios.map(createScenarioViewModel);
+        const savedScenarios = scenarioViewModels.filter(scenario => scenario.isSelected);
 
         if (!isMounted) return;
-        setScenarios(sourceScenarios.map(createScenarioViewModel));
-        setSelectedScenarios([]);
-        setIsScenarioLocked(false);
+        setScenarios(scenarioViewModels);
+        setSelectedScenarios(savedScenarios);
+        setIsScenarioLocked(savedScenarios.length > 0);
         setIsSaveDialogOpen(false);
         setDetailScenario(null);
       } catch {
         if (!isMounted) return;
         const fallbackSource = mockScenarios.length ? mockScenarios : FALLBACK_SCENARIOS;
-        setScenarios(fallbackSource.map(createScenarioViewModel));
-        setSelectedScenarios([]);
-        setIsScenarioLocked(false);
+        const fallbackViewModels = fallbackSource.map(createScenarioViewModel);
+        const fallbackSelected = fallbackViewModels.filter(scenario => scenario.isSelected);
+        setScenarios(fallbackViewModels);
+        setSelectedScenarios(fallbackSelected);
+        setIsScenarioLocked(fallbackSelected.length > 0);
         setIsSaveDialogOpen(false);
         setDetailScenario(null);
       }
@@ -512,6 +694,51 @@ export default function ScenarioGeneration() {
       setIsGeneratingAI(false);
     }
   };
+
+  async function updateScenarioDetail(scenarioId, data) {
+    setIsUpdatingScenario(true);
+
+    try {
+      const response = await scenariosApi.update(scenarioId, data);
+      const updatedScenario = response.data;
+      const detailViewModel = createScenarioViewModel({
+        ...detailScenario,
+        ...updatedScenario,
+      });
+
+      setScenarios(prevScenarios => prevScenarios.map((scenario) => {
+        if (String(scenario.id) !== String(scenarioId)) {
+          return scenario;
+        }
+
+        return createScenarioViewModel({
+          ...scenario,
+          ...updatedScenario,
+        });
+      }));
+
+      setSelectedScenarios(prevSelected => prevSelected.map((scenario) => {
+        if (String(scenario.id) !== String(scenarioId)) {
+          return scenario;
+        }
+
+        return createScenarioViewModel({
+          ...scenario,
+          ...updatedScenario,
+        });
+      }));
+
+      setDetailScenario(detailViewModel);
+      showSuccess('Scenario details updated successfully.');
+      return detailViewModel;
+    } catch (error) {
+      console.error('Failed to update scenario details:', error);
+      showError(getApiErrorMessage(error, 'Failed to update scenario details. Please try again.'));
+      throw error;
+    } finally {
+      setIsUpdatingScenario(false);
+    }
+  }
 
   function isScenarioSelected(scenario) {
     return selectedScenarios.some(selected => String(selected.id) === String(scenario.id));
@@ -629,7 +856,19 @@ export default function ScenarioGeneration() {
   }
 
   if (detailScenario) {
-    return <ScenarioDetailPage scenario={detailScenario} onBack={() => setDetailScenario(null)} />;
+    const canEditScenarioDetail = !isSelectionLockedForUser
+      && Number.isInteger(Number(detailScenario.id));
+
+    return (
+      <ScenarioDetailPage
+        scenario={detailScenario}
+        onBack={() => setDetailScenario(null)}
+        canEdit={canEditScenarioDetail}
+        isSavingEdit={isUpdatingScenario}
+        onSave={updateScenarioDetail}
+        onValidationError={showError}
+      />
+    );
   }
 
   return (

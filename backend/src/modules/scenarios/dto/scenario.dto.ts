@@ -37,6 +37,33 @@ export class CreateScenarioDto {
   keyDrivers?: string[];
 }
 
+export class UpdateScenarioDto {
+  @IsOptional()
+  @IsString()
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  focus?: string;
+
+  @IsOptional()
+  @IsString()
+  probability?: string;
+
+  @IsOptional()
+  @IsString()
+  milestone?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  keyDrivers?: string[];
+}
+
 export class SelectScenariosDto {
   @IsNumber()
   workshopId!: number;

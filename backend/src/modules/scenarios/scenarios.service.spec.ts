@@ -1,4 +1,8 @@
-import { NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { ScenariosService } from './scenarios.service';
 
 describe('ScenariosService AI generation', () => {
@@ -344,5 +348,112 @@ describe('ScenariosService AI generation', () => {
         ],
       }),
     );
+  });
+});
+
+describe('ScenariosService scenario editing', () => {
+  function createEditService(scenario: Record<string, unknown> | null) {
+    const prisma = {
+      scenario: {
+        findUnique: jest.fn().mockResolvedValue(scenario),
+        update: jest.fn().mockImplementation(({ data }) =>
+          Promise.resolve({
+            ...scenario,
+            ...data,
+          }),
+        ),
+      },
+    };
+    const notifications = {
+      notifyScenarioCreated: jest.fn(),
+      notifyScenarioSelected: jest.fn(),
+    };
+
+    return {
+      service: new ScenariosService(prisma as any, notifications as any),
+      prisma,
+    };
+  }
+
+  it('updates editable scenario detail fields', async () => {
+    const { service, prisma } = createEditService({
+      id: 42,
+      isSelected: false,
+      title: 'Old scenario',
+      description: 'Old description',
+      focus: 'Old focus',
+      probability: 'Low',
+      milestone: 'Old milestone',
+      keyDrivers: ['Old driver'],
+    });
+
+    const scenario = await service.update(
+      42,
+      {
+        title: '  Revised scenario  ',
+        description: 'Revised detail',
+        focus: 'Strategic renewal',
+        probability: 'Medium',
+        milestone: '2030 institutional shift',
+        keyDrivers: ['AI adoption', '  ', 'Policy reform'],
+      },
+      'ANALYST',
+    );
+
+    expect(prisma.scenario.findUnique).toHaveBeenCalledWith({
+      where: { id: 42 },
+    });
+    expect(prisma.scenario.update).toHaveBeenCalledWith({
+      where: { id: 42 },
+      data: {
+        title: 'Revised scenario',
+        description: 'Revised detail',
+        focus: 'Strategic renewal',
+        probability: 'Medium',
+        milestone: '2030 institutional shift',
+        keyDrivers: ['AI adoption', 'Policy reform'],
+      },
+    });
+    expect(scenario).toMatchObject({
+      title: 'Revised scenario',
+      keyDrivers: ['AI adoption', 'Policy reform'],
+    });
+  });
+
+  it('blocks non-admin users from editing a saved scenario', async () => {
+    const { service, prisma } = createEditService({
+      id: 42,
+      isSelected: true,
+      title: 'Locked scenario',
+    });
+
+    await expect(
+      service.update(42, { title: 'Changed' }, 'ANALYST'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.scenario.update).not.toHaveBeenCalled();
+  });
+
+  it('allows admins to edit a saved scenario', async () => {
+    const { service, prisma } = createEditService({
+      id: 42,
+      isSelected: true,
+      title: 'Locked scenario',
+    });
+
+    await service.update(42, { title: 'Admin revision' }, 'ADMIN');
+
+    expect(prisma.scenario.update).toHaveBeenCalledWith({
+      where: { id: 42 },
+      data: { title: 'Admin revision' },
+    });
+  });
+
+  it('reports a missing scenario as not found when editing', async () => {
+    const { service, prisma } = createEditService(null);
+
+    await expect(
+      service.update(404, { title: 'Missing' }, 'ADMIN'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.scenario.update).not.toHaveBeenCalled();
   });
 });

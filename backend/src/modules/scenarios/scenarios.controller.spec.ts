@@ -53,4 +53,19 @@ describe('ScenariosController routes', () => {
       ),
     ).toBe(RequestMethod.POST);
   });
+
+  it('exposes scenario editing through an item-level update route', () => {
+    expect(
+      Reflect.getMetadata(
+        PATH_METADATA,
+        controllerPrototype.update,
+      ),
+    ).toBe(':id');
+    expect(
+      Reflect.getMetadata(
+        METHOD_METADATA,
+        controllerPrototype.update,
+      ),
+    ).toBe(RequestMethod.PUT);
+  });
 });

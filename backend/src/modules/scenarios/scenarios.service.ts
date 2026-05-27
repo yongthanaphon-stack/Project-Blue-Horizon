@@ -12,6 +12,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import {
   CreateScenarioDto,
   GenerateScenarioSignalDto,
+  UpdateScenarioDto,
 } from './dto/scenario.dto';
 import OpenAI from 'openai';
 
@@ -64,6 +65,53 @@ export class ScenariosService {
     await this.notifications.notifyScenarioCreated(scenario.id, actorId);
 
     return scenario;
+  }
+
+  async update(id: number, data: UpdateScenarioDto, actorRole?: string) {
+    const scenario = await this.prisma.scenario.findUnique({
+      where: { id },
+    });
+
+    if (!scenario) {
+      throw new NotFoundException('Scenario not found.');
+    }
+
+    if (scenario.isSelected && !this.isAdminRole(actorRole)) {
+      throw new ForbiddenException(
+        'Only administrators can edit a saved scenario.',
+      );
+    }
+
+    const updateData: Record<string, string | string[]> = {};
+    const editableTextFields: Array<keyof Omit<UpdateScenarioDto, 'keyDrivers'>> = [
+      'title',
+      'description',
+      'focus',
+      'probability',
+      'milestone',
+    ];
+
+    editableTextFields.forEach((field) => {
+      const value = data[field];
+      if (value !== undefined) {
+        updateData[field] = value.trim();
+      }
+    });
+
+    if (data.keyDrivers !== undefined) {
+      updateData.keyDrivers = data.keyDrivers
+        .map((driver) => driver.trim())
+        .filter(Boolean);
+    }
+
+    if (!Object.keys(updateData).length) {
+      return scenario;
+    }
+
+    return this.prisma.scenario.update({
+      where: { id },
+      data: updateData,
+    });
   }
 
   async generateScenarioFromAI(
