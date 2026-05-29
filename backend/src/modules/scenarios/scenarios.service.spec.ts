@@ -33,6 +33,8 @@ describe('ScenariosService AI generation', () => {
     aiResponses,
     workshop = {
       id: 7,
+      name: 'Thai Higher Education 2035',
+      description: 'Future scenarios for Thai university strategy.',
       horizon: 'H2',
       scenarios: [],
       signals: [
@@ -51,6 +53,8 @@ describe('ScenariosService AI generation', () => {
     workshop?:
       | {
           id: number;
+          name?: string;
+          description?: string | null;
           horizon: string;
           scenarios?: Array<{
             title: string;
@@ -204,6 +208,8 @@ describe('ScenariosService AI generation', () => {
       ]),
       workshop: {
         id: 7,
+        name: 'Thai Higher Education 2035',
+        description: 'Future scenarios for Thai university strategy.',
         horizon: 'H2',
         signals: [
           {
@@ -229,7 +235,7 @@ describe('ScenariosService AI generation', () => {
       expect.objectContaining({
         messages: [
           expect.objectContaining({
-            content: expect.stringContaining('Existing scenarios to avoid'),
+            content: expect.stringContaining('Scenario เดิมที่ต้องหลีกเลี่ยง'),
           }),
         ],
       }),
@@ -245,10 +251,61 @@ describe('ScenariosService AI generation', () => {
     );
   });
 
+  it('anchors the AI prompt to the workshop topic and description', async () => {
+    const { service, aiCreate } = createService({
+      workshop: {
+        id: 7,
+        name: 'อนาคตมหาวิทยาลัยไทยในยุคประชากรลดลง',
+        description: 'สร้างฉากทัศน์สำหรับกลยุทธ์มหาวิทยาลัยไทยเมื่อจำนวนนักศึกษาลดลง',
+        horizon: 'H3',
+        scenarios: [],
+        signals: [
+          {
+            name: 'AI tutors',
+            shortDetails: 'Personalized tutoring expands.',
+            description: 'AI tutoring systems improve access.',
+          },
+        ],
+      },
+    });
+
+    await service.generateScenarioFromAI(7, 9);
+
+    expect(aiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            content: expect.stringContaining('หัวข้อและเป้าหมายของ Workshop'),
+          }),
+        ],
+      }),
+    );
+    expect(aiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            content: expect.stringContaining('อนาคตมหาวิทยาลัยไทยในยุคประชากรลดลง'),
+          }),
+        ],
+      }),
+    );
+    expect(aiCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messages: [
+          expect.objectContaining({
+            content: expect.stringContaining('สร้างฉากทัศน์สำหรับกลยุทธ์มหาวิทยาลัยไทยเมื่อจำนวนนักศึกษาลดลง'),
+          }),
+        ],
+      }),
+    );
+  });
+
   it('retries once when AI returns an existing scenario title', async () => {
     const { service, prisma, aiCreate } = createService({
       workshop: {
         id: 7,
+        name: 'Thai Higher Education 2035',
+        description: 'Future scenarios for Thai university strategy.',
         horizon: 'H2',
         signals: [
           {
@@ -334,7 +391,7 @@ describe('ScenariosService AI generation', () => {
       expect.objectContaining({
         messages: [
           expect.objectContaining({
-            content: expect.stringContaining('Radar-selected input signals'),
+            content: expect.stringContaining('สัญญาณที่เลือกจากเรดาร์'),
           }),
         ],
       }),

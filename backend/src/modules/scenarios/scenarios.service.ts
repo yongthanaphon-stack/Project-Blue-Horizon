@@ -141,6 +141,13 @@ export class ScenariosService {
         throw new NotFoundException('Workshop not found.');
       }
 
+      const workshopContext = [
+        `ชื่อ Workshop: ${workshop.name}`,
+        workshop.description
+          ? `รายละเอียดและเป้าหมาย Workshop: ${workshop.description}`
+          : '',
+        `กรอบเวลา Workshop: ${workshop.horizon}`,
+      ].filter(Boolean).join('\n');
       const selectedRadarSignals = radarSignals.filter(
         (signal) => signal.name?.trim() && signal.description?.trim(),
       );
@@ -148,22 +155,22 @@ export class ScenariosService {
         ? selectedRadarSignals
             .map((signal) => {
               const details = [
-                `Description: ${signal.description}`,
-                signal.category ? `PESTEL: ${signal.category}` : '',
-                signal.horizon ? `Horizon: ${signal.horizon}` : '',
-                signal.horizonDetail ? `Horizon detail: ${signal.horizonDetail}` : '',
-                signal.impactLevel ? `Impact level: ${signal.impactLevel}` : '',
+                `รายละเอียด: ${signal.description}`,
+                signal.category ? `หมวด PESTEL: ${signal.category}` : '',
+                signal.horizon ? `ระยะเวลา: ${signal.horizon}` : '',
+                signal.horizonDetail ? `รายละเอียดระยะเวลา: ${signal.horizonDetail}` : '',
+                signal.impactLevel ? `ระดับผลกระทบ: ${signal.impactLevel}` : '',
               ].filter(Boolean);
 
               return `- ${signal.name}: ${details.join(' | ')}`;
             })
             .join('\n')
         : workshop.signals
-            .map((s) => `- ${s.name}: ${s.shortDetails || s.description}`)
+            .map((s) => `- ${s.name}: รายละเอียด: ${s.shortDetails || s.description}`)
             .join('\n');
       const inputSignalSourceLabel = selectedRadarSignals.length
-        ? 'Radar-selected input signals'
-        : 'Workshop input signals';
+        ? 'สัญญาณที่เลือกจากเรดาร์การสแกนสภาพแวดล้อม'
+        : 'สัญญาณของ Workshop';
       const existingScenarios = workshop.scenarios.map((scenario) => ({
         title: scenario.title,
         description: scenario.description,
@@ -177,48 +184,62 @@ export class ScenariosService {
         ? existingScenarios
             .map((scenario, index) => {
               const details = [
-                `Title: ${scenario.title}`,
-                `Description: ${scenario.description}`,
-                scenario.focus ? `Focus: ${scenario.focus}` : '',
-                scenario.milestone ? `Milestone: ${scenario.milestone}` : '',
+                `ชื่อ Scenario: ${scenario.title}`,
+                `รายละเอียด: ${scenario.description}`,
+                scenario.focus ? `จุดโฟกัส: ${scenario.focus}` : '',
+                scenario.milestone ? `หมุดหมาย: ${scenario.milestone}` : '',
               ].filter(Boolean);
 
               return `${index + 1}. ${details.join(' | ')}`;
             })
             .join('\n')
-        : 'No existing scenarios yet.';
+        : 'ยังไม่มี Scenario เดิม';
 
       const buildPrompt = (duplicateTitle?: string) => `
-        SYSTEM PROMPT =
+        คำสั่งระบบ =
         คุณคือผู้เชี่ยวชาญด้าน Strategic Foresight ระดับโลก ที่เชี่ยวชาญการวิเคราะห์ Signals of Change เพื่อสร้าง Future Scenarios สำหรับสถาบันอุดมศึกษาในประเทศไทยและภูมิภาคอาเซียน
 
         ภูมิหลัง:
         - ใช้กรอบ PESTEL, Horizon Scanning และ Scenario Planning
-        - มุ่งเน้นผลกระทบต่อในระยะ 5-10 ปีข้างหน้า (Time Horizon: ${workshop.horizon})
+        - มุ่งเน้นผลกระทบตามกรอบเวลาของ Workshop
         - ให้ข้อมูลเชิงกลยุทธ์ที่นำไปปฏิบัติได้จริง
+
+        หัวข้อและเป้าหมายของ Workshop (ต้องยึดเป็นกรอบหลัก):
+        ${workshopContext}
+
+        กฎการยึดหัวข้อ Workshop:
+        - Scenario ที่สร้างต้องตอบโจทย์ชื่อและรายละเอียดของ Workshop เป็นอันดับแรก
+        - ทุก title, description, milestone, probability, focus และ keyDrivers ต้องเชื่อมโยงกับหัวข้อ Workshop อย่างชัดเจน
+        - ห้ามสร้าง Scenario ทั่วไปที่อ้างอิงเฉพาะ signals แต่ไม่สัมพันธ์กับหัวข้อ Workshop
+        - หากสัญญาณมีความหมายกว้าง ให้ตีความสัญญาณผ่านบริบทของ Workshop เท่านั้น
 
         ${inputSignalSourceLabel}:
         ${inputSignalsContext}
 
-        Existing scenarios to avoid:
+        Scenario เดิมที่ต้องหลีกเลี่ยงการซ้ำหรือคล้ายกับ Scenario ใหม่ที่คุณจะสร้าง:
         ${existingScenariosContext}
 
-        Diversity goal:
-        - Generate a scenario that is meaningfully different from every existing scenario above.
-        - Do not reuse or lightly rephrase an existing title.
-        - Use a new scenario archetype, strategic tension, causal pathway, milestone, and focus area.
-        - If the same signals could support multiple futures, choose a less obvious branch than prior outputs.
-        ${duplicateTitle ? `- The previous AI attempt reused the title "${duplicateTitle}". You must choose a completely new title and framing now.` : ''}
+        เป้าหมายด้านความแตกต่าง:
+        - สร้าง Scenario ที่แตกต่างอย่างมีนัยสำคัญจาก Scenario เดิมทั้งหมด
+        - ห้ามใช้ title เดิม หรือเปลี่ยนคำเล็กน้อยจาก title เดิม
+        - ใช้ archetype, strategic tension, causal pathway, milestone และ focus area ใหม่
+        - หาก signals ชุดเดียวกันตีความได้หลายอนาคต ให้เลือกเส้นทางอนาคตที่ต่างจากผลลัพธ์เดิม
+        ${duplicateTitle ? `- คำตอบก่อนหน้าของ AI ใช้ title ซ้ำคือ "${duplicateTitle}" ต้องเลือก title และกรอบเรื่องใหม่ทั้งหมด` : ''}
 
         กฎเหล็ก:
         - ตอบเป็น JSON Array เท่านั้น - ห้ามมี markdown, backtick หรือข้อความอื่นใดทั้งสิ้น
-        - ห้าม prefix เช่น "Here is..." หรือ "\`\`\`json"
+        - ห้ามมีข้อความนำหน้า หรือ code fence เช่น "\`\`\`json"
         - เริ่มต้นด้วย [ และจบด้วย ] เท่านั้น
         - ทุก field ต้องมีข้อมูล ห้าม null หรือ empty string
-        - title ต้องไม่ซ้ำกับ Existing scenarios to avoid และต้องไม่เป็นแค่การเปลี่ยนคำเล็กน้อย
+        - title ต้องไม่ซ้ำกับ Scenario เดิมที่ต้องหลีกเลี่ยง และต้องไม่เป็นแค่การเปลี่ยนคำเล็กน้อย
         - description ต้องเล่าอนาคตคนละแบบ ไม่ใช่แค่เปลี่ยนคำจาก scenario เดิม
 
-        Output format: JSON
+        กฎด้านภาษา:
+        - ให้สร้างเนื้อหาทุกค่าใน JSON เป็นภาษาไทยเท่านั้น
+        - ห้ามใช้ภาษาอังกฤษใน title, description, milestone, probability, focus และ keyDrivers
+        - ยกเว้นชื่อ key ของ JSON เช่น title, description, milestone, probability, focus, keyDrivers ต้องคงเป็นภาษาอังกฤษตาม schema
+
+        รูปแบบคำตอบ: JSON
         ข้อมูลที่จำเป็นต่อการสร้าง Scenario (บังคับโครงสร้างดังนี้):
         [{
           "title": "text | ชื่อหัวเรื่องของ Scenario",
