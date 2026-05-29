@@ -2,10 +2,12 @@ import { PestelCategory } from '@prisma/client';
 import { SignalsService } from './signals.service';
 
 describe('SignalsService tag suggestions', () => {
-  function createService(signals: Array<{
-    tags: string[];
-    pestelCategories: PestelCategory[];
-  }>) {
+  function createService(
+    signals: Array<{
+      tags: string[];
+      pestelCategories: PestelCategory[];
+    }>,
+  ) {
     const prisma = {
       signal: {
         findMany: jest.fn().mockResolvedValue(signals),
@@ -54,23 +56,14 @@ describe('SignalsService tag suggestions', () => {
         }),
       }),
     );
-    expect(suggestions.suggested.map((item: { tag: string }) => item.tag)).toEqual([
-      'ai',
-      'automation',
-      'personalization',
-    ]);
-    expect(suggestions.related.map((item: { tag: string }) => item.tag)).toEqual([
-      'ai',
-      'automation',
-      'personalization',
-      'policy',
-    ]);
-    expect(suggestions.popular.map((item: { tag: string }) => item.tag)).toEqual([
-      'ai',
-      'automation',
-      'education',
-      'personalization',
-      'policy',
-    ]);
+    expect(
+      suggestions.suggested.map((item: { tag: string }) => item.tag),
+    ).toEqual(['ai', 'automation', 'personalization']);
+    expect(
+      suggestions.related.map((item: { tag: string }) => item.tag),
+    ).toEqual(['ai', 'automation', 'personalization', 'policy']);
+    expect(
+      suggestions.popular.map((item: { tag: string }) => item.tag),
+    ).toEqual(['ai', 'automation', 'education', 'personalization', 'policy']);
   });
 });

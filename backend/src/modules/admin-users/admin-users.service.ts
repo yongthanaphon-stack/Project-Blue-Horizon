@@ -81,7 +81,7 @@ export class AdminUsersService {
     ]);
 
     return {
-      users: users.map(user => this.toAdminUser(user)),
+      users: users.map((user) => this.toAdminUser(user)),
       meta: {
         total: totalUsers,
         filtered: users.length,
@@ -135,7 +135,9 @@ export class AdminUsersService {
         where: { userId: id },
         select: { signalId: true },
       });
-      const votedSignalIds = [...new Set(votedSignals.map(vote => vote.signalId))];
+      const votedSignalIds = [
+        ...new Set(votedSignals.map((vote) => vote.signalId)),
+      ];
 
       await tx.signal.updateMany({
         where: { ownerId: id },
@@ -245,7 +247,9 @@ export class AdminUsersService {
     }
 
     if (!Object.keys(data).length) {
-      throw new BadRequestException('Please provide at least one field to update.');
+      throw new BadRequestException(
+        'Please provide at least one field to update.',
+      );
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -267,12 +271,14 @@ export class AdminUsersService {
     }
   }
 
-  private assertCanAssignRole(
-    currentUser: AuthenticatedUser,
-    role?: UserRole,
-  ) {
-    if (role === UserRole.ADMIN_SYSTEM && currentUser.role !== UserRole.ADMIN_SYSTEM) {
-      throw new ForbiddenException('Only system administrators can assign system administrator access.');
+  private assertCanAssignRole(currentUser: AuthenticatedUser, role?: UserRole) {
+    if (
+      role === UserRole.ADMIN_SYSTEM &&
+      currentUser.role !== UserRole.ADMIN_SYSTEM
+    ) {
+      throw new ForbiddenException(
+        'Only system administrators can assign system administrator access.',
+      );
     }
   }
 
@@ -285,7 +291,9 @@ export class AdminUsersService {
       currentUser.role !== UserRole.ADMIN_SYSTEM &&
       currentUser.id !== targetUser.id
     ) {
-      throw new ForbiddenException('Only system administrators can edit system administrators.');
+      throw new ForbiddenException(
+        'Only system administrators can edit system administrators.',
+      );
     }
   }
 

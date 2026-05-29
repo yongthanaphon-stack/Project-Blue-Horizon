@@ -20,7 +20,7 @@ export class AuthController {
   @Get('test-db')
   async testDb() {
     const signals = await this.prisma.signal.findMany({
-      where: { deletedAt: null, workshopId: null }
+      where: { deletedAt: null, workshopId: null },
     });
     return { success: true, count: signals.length, signals };
   }
@@ -28,7 +28,7 @@ export class AuthController {
   @Get('test-db2')
   async testDb2() {
     const all = await this.prisma.signal.findMany({
-      where: { deletedAt: null, workshopId: null }
+      where: { deletedAt: null, workshopId: null },
     });
     return { success: true, count: all.length, first: all[0] };
   }

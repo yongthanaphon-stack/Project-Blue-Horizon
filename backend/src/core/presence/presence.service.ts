@@ -39,7 +39,10 @@ export class PresenceService {
   private readonly workshopRooms = new Map<number, RoomPresence>();
   private readonly swotRooms = new Map<number, RoomPresence>();
   private readonly socketRooms = new Map<string, SocketRooms>();
-  private readonly swotActivities = new Map<number, Map<number, SwotActivity>>();
+  private readonly swotActivities = new Map<
+    number,
+    Map<number, SwotActivity>
+  >();
   private readonly swotActivityTtlMs = 10000;
 
   connect(userId: number, socketId: string) {
@@ -103,7 +106,8 @@ export class PresenceService {
   }
 
   setSwotActivity(scenarioId: number, activity: SwotActivity) {
-    const activities = this.swotActivities.get(scenarioId) || new Map<number, SwotActivity>();
+    const activities =
+      this.swotActivities.get(scenarioId) || new Map<number, SwotActivity>();
     activities.set(activity.userId, activity);
     this.swotActivities.set(scenarioId, activities);
   }
@@ -123,13 +127,15 @@ export class PresenceService {
     if (!activities) return [];
 
     const now = Date.now();
-    const activeActivities = Array.from(activities.values()).filter(activity => (
-      now - activity.updatedAt <= this.swotActivityTtlMs
-    ));
+    const activeActivities = Array.from(activities.values()).filter(
+      (activity) => now - activity.updatedAt <= this.swotActivityTtlMs,
+    );
 
     if (activeActivities.length !== activities.size) {
       const nextActivities = new Map<number, SwotActivity>();
-      activeActivities.forEach(activity => nextActivities.set(activity.userId, activity));
+      activeActivities.forEach((activity) =>
+        nextActivities.set(activity.userId, activity),
+      );
 
       if (nextActivities.size) {
         this.swotActivities.set(scenarioId, nextActivities);
@@ -150,12 +156,12 @@ export class PresenceService {
 
     if (!rooms) return affected;
 
-    Array.from(rooms.workshopIds).forEach(workshopId => {
+    Array.from(rooms.workshopIds).forEach((workshopId) => {
       this.leaveWorkshop(workshopId, userId, socketId);
       affected.workshopIds.push(workshopId);
     });
 
-    Array.from(rooms.swotScenarioIds).forEach(scenarioId => {
+    Array.from(rooms.swotScenarioIds).forEach((scenarioId) => {
       this.leaveSwotScenario(scenarioId, userId, socketId);
       affected.swotScenarioIds.push(scenarioId);
     });
@@ -171,7 +177,10 @@ export class PresenceService {
     socketId: string,
   ) {
     const room = rooms.get(roomId) || new Map<number, RoomUser>();
-    const roomUser = room.get(user.id) || { user, socketIds: new Set<string>() };
+    const roomUser = room.get(user.id) || {
+      user,
+      socketIds: new Set<string>(),
+    };
 
     roomUser.user = user;
     roomUser.socketIds.add(socketId);
@@ -205,10 +214,14 @@ export class PresenceService {
     const room = rooms.get(roomId);
     if (!room) return [];
 
-    return Array.from(room.values()).map(roomUser => roomUser.user);
+    return Array.from(room.values()).map((roomUser) => roomUser.user);
   }
 
-  private addSocketRoom(socketId: string, key: keyof SocketRooms, roomId: number) {
+  private addSocketRoom(
+    socketId: string,
+    key: keyof SocketRooms,
+    roomId: number,
+  ) {
     const rooms = this.socketRooms.get(socketId) || {
       workshopIds: new Set<number>(),
       swotScenarioIds: new Set<number>(),
@@ -218,7 +231,11 @@ export class PresenceService {
     this.socketRooms.set(socketId, rooms);
   }
 
-  private removeSocketRoom(socketId: string, key: keyof SocketRooms, roomId: number) {
+  private removeSocketRoom(
+    socketId: string,
+    key: keyof SocketRooms,
+    roomId: number,
+  ) {
     const rooms = this.socketRooms.get(socketId);
     if (!rooms) return;
 

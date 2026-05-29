@@ -83,13 +83,9 @@ export class ScenariosService {
     }
 
     const updateData: Record<string, string | string[]> = {};
-    const editableTextFields: Array<keyof Omit<UpdateScenarioDto, 'keyDrivers'>> = [
-      'title',
-      'description',
-      'focus',
-      'probability',
-      'milestone',
-    ];
+    const editableTextFields: Array<
+      keyof Omit<UpdateScenarioDto, 'keyDrivers'>
+    > = ['title', 'description', 'focus', 'probability', 'milestone'];
 
     editableTextFields.forEach((field) => {
       const value = data[field];
@@ -147,7 +143,9 @@ export class ScenariosService {
           ? `รายละเอียดและเป้าหมาย Workshop: ${workshop.description}`
           : '',
         `กรอบเวลา Workshop: ${workshop.horizon}`,
-      ].filter(Boolean).join('\n');
+      ]
+        .filter(Boolean)
+        .join('\n');
       const selectedRadarSignals = radarSignals.filter(
         (signal) => signal.name?.trim() && signal.description?.trim(),
       );
@@ -158,7 +156,9 @@ export class ScenariosService {
                 `รายละเอียด: ${signal.description}`,
                 signal.category ? `หมวด PESTEL: ${signal.category}` : '',
                 signal.horizon ? `ระยะเวลา: ${signal.horizon}` : '',
-                signal.horizonDetail ? `รายละเอียดระยะเวลา: ${signal.horizonDetail}` : '',
+                signal.horizonDetail
+                  ? `รายละเอียดระยะเวลา: ${signal.horizonDetail}`
+                  : '',
                 signal.impactLevel ? `ระดับผลกระทบ: ${signal.impactLevel}` : '',
               ].filter(Boolean);
 
@@ -166,7 +166,10 @@ export class ScenariosService {
             })
             .join('\n')
         : workshop.signals
-            .map((s) => `- ${s.name}: รายละเอียด: ${s.shortDetails || s.description}`)
+            .map(
+              (s) =>
+                `- ${s.name}: รายละเอียด: ${s.shortDetails || s.description}`,
+            )
             .join('\n');
       const inputSignalSourceLabel = selectedRadarSignals.length
         ? 'สัญญาณที่เลือกจากเรดาร์การสแกนสภาพแวดล้อม'
@@ -178,7 +181,9 @@ export class ScenariosService {
         milestone: scenario.milestone,
       }));
       const existingScenarioTitles = new Set(
-        existingScenarios.map((scenario) => this.normalizeTitle(scenario.title)),
+        existingScenarios.map((scenario) =>
+          this.normalizeTitle(scenario.title),
+        ),
       );
       const existingScenariosContext = existingScenarios.length
         ? existingScenarios
@@ -445,18 +450,20 @@ export class ScenariosService {
 
     if (!Array.isArray(choices)) return undefined;
 
-    return choices
-      .map((choice) => {
-        const messageContent = choice.message?.content;
-        if (typeof messageContent === 'string') return messageContent;
+    return (
+      choices
+        .map((choice) => {
+          const messageContent = choice.message?.content;
+          if (typeof messageContent === 'string') return messageContent;
 
-        const deltaContent = choice.delta?.content;
-        if (typeof deltaContent === 'string') return deltaContent;
+          const deltaContent = choice.delta?.content;
+          if (typeof deltaContent === 'string') return deltaContent;
 
-        return '';
-      })
-      .join('')
-      .trim() || undefined;
+          return '';
+        })
+        .join('')
+        .trim() || undefined
+    );
   }
 
   private extractContentFromSse(response: string): string | undefined {

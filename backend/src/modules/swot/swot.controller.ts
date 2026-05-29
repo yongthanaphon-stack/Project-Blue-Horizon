@@ -38,6 +38,11 @@ export class SwotController {
     @Body() data: AddSwotItemDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.swotService.addItem(scenarioId, data.quadrant, data.item, req.user.id);
+    return this.swotService.addItem(
+      scenarioId,
+      data.quadrant,
+      data.item,
+      req.user.id,
+    );
   }
 }

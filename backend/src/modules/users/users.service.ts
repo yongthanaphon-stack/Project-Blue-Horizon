@@ -29,7 +29,7 @@ export class UsersService {
     });
 
     return {
-      users: users.map(user => ({
+      users: users.map((user) => ({
         ...user,
         online: this.presence.isOnline(user.id),
         updatedAt: user.updatedAt.toISOString(),

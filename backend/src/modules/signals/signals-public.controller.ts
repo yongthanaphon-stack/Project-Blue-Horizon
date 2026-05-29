@@ -1,4 +1,10 @@
-import { Controller, DefaultValuePipe, Get, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  DefaultValuePipe,
+  Get,
+  ParseIntPipe,
+  Query,
+} from '@nestjs/common';
 import { SignalsService } from './signals.service';
 
 @Controller('api/public/signals')

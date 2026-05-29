@@ -45,16 +45,23 @@ export class WorkshopsService {
       return null;
     }
 
-    const isParticipant = workshop.participants?.some(p => p.userId === userId);
+    const isParticipant = workshop.participants?.some(
+      (p) => p.userId === userId,
+    );
     if (!isParticipant) {
-      throw new ForbiddenException('You do not have access to this workshop session');
+      throw new ForbiddenException(
+        'You do not have access to this workshop session',
+      );
     }
 
     return workshop;
   }
 
   async create(data: CreateWorkshopDto, actorId?: number) {
-    const participantIds = new Set([...(data.participantIds || []), ...(actorId ? [actorId] : [])]);
+    const participantIds = new Set([
+      ...(data.participantIds || []),
+      ...(actorId ? [actorId] : []),
+    ]);
 
     const workshopData: any = {
       name: data.name,

@@ -81,7 +81,9 @@ const RADAR_ACTIONS = new Set(['added', 'edited', 'removed', 'synced']);
     credentials: true,
   },
 })
-export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class NotificationsGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   private server!: Server;
 
@@ -107,7 +109,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       });
       this.broadcastPresence();
     } catch {
-      client.emit('notifications:error', { message: 'Unauthorized socket connection.' });
+      client.emit('notifications:error', {
+        message: 'Unauthorized socket connection.',
+      });
       client.disconnect(true);
     }
   }
@@ -116,11 +120,16 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     const user = client.data.user;
     if (!user) return;
 
-    const affectedRooms = this.presence.leaveCollaborativeRooms(client.id, user.id);
+    const affectedRooms = this.presence.leaveCollaborativeRooms(
+      client.id,
+      user.id,
+    );
     this.presence.disconnect(user.id, client.id);
     this.broadcastPresence();
-    affectedRooms.workshopIds.forEach(workshopId => this.emitWorkshopPresence(workshopId));
-    affectedRooms.swotScenarioIds.forEach(scenarioId => {
+    affectedRooms.workshopIds.forEach((workshopId) =>
+      this.emitWorkshopPresence(workshopId),
+    );
+    affectedRooms.swotScenarioIds.forEach((scenarioId) => {
       this.emitSwotPresence(scenarioId);
       this.emitSwotActivity(scenarioId);
     });
@@ -147,20 +156,22 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
     const workshopIds = this.parseWorkshopIds(payload?.workshopIds);
 
-    await Promise.all(workshopIds.map(async workshopId => {
-      try {
-        await this.assertWorkshopAccess(workshopId, user);
-        await client.join(this.getWorkshopRoom(workshopId));
-        client.emit('workshop:presence', {
-          workshopId,
-          users: this.presence.getWorkshopUsers(workshopId),
-        });
-      } catch {
-        client.emit('collaboration:error', {
-          message: 'You do not have access to this workshop session.',
-        });
-      }
-    }));
+    await Promise.all(
+      workshopIds.map(async (workshopId) => {
+        try {
+          await this.assertWorkshopAccess(workshopId, user);
+          await client.join(this.getWorkshopRoom(workshopId));
+          client.emit('workshop:presence', {
+            workshopId,
+            users: this.presence.getWorkshopUsers(workshopId),
+          });
+        } catch {
+          client.emit('collaboration:error', {
+            message: 'You do not have access to this workshop session.',
+          });
+        }
+      }),
+    );
   }
 
   @SubscribeMessage('workshop:unwatch')
@@ -169,9 +180,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     payload: WorkshopPresencePayload,
   ) {
     const workshopIds = this.parseWorkshopIds(payload?.workshopIds);
-    await Promise.all(workshopIds.map(workshopId => (
-      client.leave(this.getWorkshopRoom(workshopId))
-    )));
+    await Promise.all(
+      workshopIds.map((workshopId) =>
+        client.leave(this.getWorkshopRoom(workshopId)),
+      ),
+    );
   }
 
   @SubscribeMessage('workshop:join')
@@ -185,7 +198,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     try {
       const workshopId = this.parsePositiveInt(payload?.workshopId);
       await this.assertWorkshopAccess(workshopId, user);
-      this.presence.joinWorkshop(workshopId, this.toPresenceUser(user), client.id);
+      this.presence.joinWorkshop(
+        workshopId,
+        this.toPresenceUser(user),
+        client.id,
+      );
       await client.join(this.getWorkshopRoom(workshopId));
       this.emitWorkshopPresence(workshopId);
     } catch {
@@ -209,7 +226,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       await client.leave(this.getWorkshopRoom(workshopId));
       this.emitWorkshopPresence(workshopId);
     } catch {
-      client.emit('collaboration:error', { message: 'Unable to leave workshop session.' });
+      client.emit('collaboration:error', {
+        message: 'Unable to leave workshop session.',
+      });
     }
   }
 
@@ -224,7 +243,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     try {
       const scenarioId = this.parsePositiveInt(payload?.scenarioId);
       await this.assertScenarioAccess(scenarioId, user);
-      this.presence.joinSwotScenario(scenarioId, this.toPresenceUser(user), client.id);
+      this.presence.joinSwotScenario(
+        scenarioId,
+        this.toPresenceUser(user),
+        client.id,
+      );
       await client.join(this.getSwotRoom(scenarioId));
       this.emitSwotPresence(scenarioId);
       this.emitSwotActivity(scenarioId);
@@ -254,14 +277,17 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         action: this.parseRadarAction(payload?.action),
         signalId: payload?.signalId ?? null,
         signalName: payload?.signalName ?? null,
-        clientMutationId: typeof payload?.clientMutationId === 'string'
-          ? payload.clientMutationId
-          : null,
+        clientMutationId:
+          typeof payload?.clientMutationId === 'string'
+            ? payload.clientMutationId
+            : null,
         actor: this.toPresenceUser(user),
         updatedAt: new Date().toISOString(),
       });
     } catch {
-      client.emit('collaboration:error', { message: 'Unable to sync radar update.' });
+      client.emit('collaboration:error', {
+        message: 'Unable to sync radar update.',
+      });
     }
   }
 
@@ -280,7 +306,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       this.emitSwotPresence(scenarioId);
       this.emitSwotActivity(scenarioId);
     } catch {
-      client.emit('collaboration:error', { message: 'Unable to leave SWOT analysis.' });
+      client.emit('collaboration:error', {
+        message: 'Unable to leave SWOT analysis.',
+      });
     }
   }
 
@@ -296,11 +324,16 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       const scenarioId = this.parsePositiveInt(payload?.scenarioId);
       const quadrant = this.parseSwotQuadrant(payload?.quadrant);
       const itemIndex = this.parseOptionalIndex(payload?.itemIndex);
-      const mode: SwotActivityMode = payload?.mode === 'editing' ? 'editing' : 'typing';
+      const mode: SwotActivityMode =
+        payload?.mode === 'editing' ? 'editing' : 'typing';
 
       if (!this.presence.isUserInSwotScenario(scenarioId, user.id)) {
         await this.assertScenarioAccess(scenarioId, user);
-        this.presence.joinSwotScenario(scenarioId, this.toPresenceUser(user), client.id);
+        this.presence.joinSwotScenario(
+          scenarioId,
+          this.toPresenceUser(user),
+          client.id,
+        );
         await client.join(this.getSwotRoom(scenarioId));
         this.emitSwotPresence(scenarioId);
       }
@@ -315,7 +348,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       });
       this.emitSwotActivity(scenarioId);
     } catch {
-      client.emit('collaboration:error', { message: 'Unable to update SWOT activity.' });
+      client.emit('collaboration:error', {
+        message: 'Unable to update SWOT activity.',
+      });
     }
   }
 
@@ -332,7 +367,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       this.presence.clearSwotActivity(scenarioId, user.id);
       this.emitSwotActivity(scenarioId);
     } catch {
-      client.emit('collaboration:error', { message: 'Unable to clear SWOT activity.' });
+      client.emit('collaboration:error', {
+        message: 'Unable to clear SWOT activity.',
+      });
     }
   }
 
@@ -360,7 +397,11 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     });
   }
 
-  emitNotificationArchived(userId: number, notificationId: number, unread: number) {
+  emitNotificationArchived(
+    userId: number,
+    notificationId: number,
+    unread: number,
+  ) {
     this.server.to(this.getUserRoom(userId)).emit('notification:archived', {
       notificationId,
       unread,
@@ -426,7 +467,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   private getAuthenticatedUser(client: AuthenticatedSocket) {
     const user = client.data.user;
     if (!user) {
-      client.emit('collaboration:error', { message: 'Unauthorized socket connection.' });
+      client.emit('collaboration:error', {
+        message: 'Unauthorized socket connection.',
+      });
     }
 
     return user;
@@ -455,8 +498,8 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     if (!Array.isArray(value)) return [];
 
     const workshopIds = value
-      .map(item => Number(item))
-      .filter(item => Number.isInteger(item) && item > 0);
+      .map((item) => Number(item))
+      .filter((item) => Number.isInteger(item) && item > 0);
 
     return Array.from(new Set(workshopIds)).slice(0, 50);
   }
@@ -492,7 +535,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     return role === 'ADMIN' || role === 'ADMIN_SYSTEM';
   }
 
-  private async assertWorkshopAccess(workshopId: number, user: AuthenticatedUser) {
+  private async assertWorkshopAccess(
+    workshopId: number,
+    user: AuthenticatedUser,
+  ) {
     const workshop = await this.prisma.workshop.findUnique({
       where: { id: workshopId },
       select: {
@@ -505,12 +551,18 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       },
     });
 
-    if (!workshop || (!this.isAdminRole(user.role) && !workshop.participants.length)) {
+    if (
+      !workshop ||
+      (!this.isAdminRole(user.role) && !workshop.participants.length)
+    ) {
       throw new Error('Forbidden workshop room');
     }
   }
 
-  private async assertScenarioAccess(scenarioId: number, user: AuthenticatedUser) {
+  private async assertScenarioAccess(
+    scenarioId: number,
+    user: AuthenticatedUser,
+  ) {
     const scenario = await this.prisma.scenario.findUnique({
       where: { id: scenarioId },
       select: {
@@ -527,7 +579,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
       },
     });
 
-    if (!scenario || (!this.isAdminRole(user.role) && !scenario.workshop.participants.length)) {
+    if (
+      !scenario ||
+      (!this.isAdminRole(user.role) && !scenario.workshop.participants.length)
+    ) {
       throw new Error('Forbidden SWOT room');
     }
   }

@@ -61,11 +61,15 @@ export class ProfileService {
       }
 
       if (!dto.newPassword || !dto.confirmPassword) {
-        throw new BadRequestException('New password and confirmation are required.');
+        throw new BadRequestException(
+          'New password and confirmation are required.',
+        );
       }
 
       if (dto.newPassword !== dto.confirmPassword) {
-        throw new BadRequestException('New password and confirmation do not match.');
+        throw new BadRequestException(
+          'New password and confirmation do not match.',
+        );
       }
 
       const isCurrentPasswordValid = await bcrypt.compare(
@@ -81,7 +85,9 @@ export class ProfileService {
     }
 
     if (!Object.keys(data).length) {
-      throw new BadRequestException('Please provide at least one field to update.');
+      throw new BadRequestException(
+        'Please provide at least one field to update.',
+      );
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -107,14 +113,20 @@ export class ProfileService {
 
     if (dto.preferredFont !== undefined) {
       const preferredFont = dto.preferredFont.trim();
-      if (!FONT_PREFERENCES.includes(preferredFont as (typeof FONT_PREFERENCES)[number])) {
+      if (
+        !FONT_PREFERENCES.includes(
+          preferredFont as (typeof FONT_PREFERENCES)[number],
+        )
+      ) {
         throw new BadRequestException('Unsupported font preference.');
       }
       data.preferredFont = preferredFont;
     }
 
     if (!Object.keys(data).length) {
-      throw new BadRequestException('Please provide at least one preference to update.');
+      throw new BadRequestException(
+        'Please provide at least one preference to update.',
+      );
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -213,17 +225,17 @@ export class ProfileService {
     ]);
 
     const activity = [
-      ...notifications.map(item => ({
+      ...notifications.map((item) => ({
         kind: 'notification' as const,
         title: item.title,
         occurredAt: item.createdAt.toISOString(),
       })),
-      ...ownedSignals.map(item => ({
+      ...ownedSignals.map((item) => ({
         kind: 'signal' as const,
         title: `Updated signal "${item.name}"`,
         occurredAt: item.updatedAt.toISOString(),
       })),
-      ...votes.map(item => ({
+      ...votes.map((item) => ({
         kind: 'vote' as const,
         title: `Voted on "${item.signal.name}"`,
         occurredAt: item.createdAt.toISOString(),
@@ -233,7 +245,8 @@ export class ProfileService {
     return activity
       .sort(
         (left, right) =>
-          new Date(right.occurredAt).getTime() - new Date(left.occurredAt).getTime(),
+          new Date(right.occurredAt).getTime() -
+          new Date(left.occurredAt).getTime(),
       )
       .slice(0, 5);
   }

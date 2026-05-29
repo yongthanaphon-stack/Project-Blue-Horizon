@@ -50,25 +50,23 @@ describe('ScenariosService AI generation', () => {
     aiContent?: string;
     aiResponse?: unknown;
     aiResponses?: unknown[];
-    workshop?:
-      | {
-          id: number;
-          name?: string;
-          description?: string | null;
-          horizon: string;
-          scenarios?: Array<{
-            title: string;
-            description: string;
-            focus?: string | null;
-            milestone?: string | null;
-          }>;
-          signals: Array<{
-            name: string;
-            shortDetails: string;
-            description: string;
-          }>;
-        }
-      | null;
+    workshop?: {
+      id: number;
+      name?: string;
+      description?: string | null;
+      horizon: string;
+      scenarios?: Array<{
+        title: string;
+        description: string;
+        focus?: string | null;
+        milestone?: string | null;
+      }>;
+      signals: Array<{
+        name: string;
+        shortDetails: string;
+        description: string;
+      }>;
+    } | null;
   } = {}) {
     if (apiKey) {
       process.env.DOTBLUE_API_KEY = apiKey;
@@ -94,14 +92,14 @@ describe('ScenariosService AI generation', () => {
     };
     const service = new ScenariosService(prisma as any, notifications as any);
     const defaultAiResponse = aiResponse ?? {
-        choices: [
-          {
-            message: {
-              content: aiContent,
-            },
+      choices: [
+        {
+          message: {
+            content: aiContent,
           },
-        ],
-      };
+        },
+      ],
+    };
     const aiCreate = jest.fn();
     (aiResponses ?? [defaultAiResponse]).forEach((response) => {
       aiCreate.mockResolvedValueOnce(response);
@@ -256,7 +254,8 @@ describe('ScenariosService AI generation', () => {
       workshop: {
         id: 7,
         name: 'อนาคตมหาวิทยาลัยไทยในยุคประชากรลดลง',
-        description: 'สร้างฉากทัศน์สำหรับกลยุทธ์มหาวิทยาลัยไทยเมื่อจำนวนนักศึกษาลดลง',
+        description:
+          'สร้างฉากทัศน์สำหรับกลยุทธ์มหาวิทยาลัยไทยเมื่อจำนวนนักศึกษาลดลง',
         horizon: 'H3',
         scenarios: [],
         signals: [
@@ -284,7 +283,9 @@ describe('ScenariosService AI generation', () => {
       expect.objectContaining({
         messages: [
           expect.objectContaining({
-            content: expect.stringContaining('อนาคตมหาวิทยาลัยไทยในยุคประชากรลดลง'),
+            content: expect.stringContaining(
+              'อนาคตมหาวิทยาลัยไทยในยุคประชากรลดลง',
+            ),
           }),
         ],
       }),
@@ -293,7 +294,9 @@ describe('ScenariosService AI generation', () => {
       expect.objectContaining({
         messages: [
           expect.objectContaining({
-            content: expect.stringContaining('สร้างฉากทัศน์สำหรับกลยุทธ์มหาวิทยาลัยไทยเมื่อจำนวนนักศึกษาลดลง'),
+            content: expect.stringContaining(
+              'สร้างฉากทัศน์สำหรับกลยุทธ์มหาวิทยาลัยไทยเมื่อจำนวนนักศึกษาลดลง',
+            ),
           }),
         ],
       }),
@@ -347,8 +350,10 @@ describe('ScenariosService AI generation', () => {
                 content: JSON.stringify([
                   {
                     title: 'Ambient Learning Grid',
-                    description: 'A distinct scenario with a new strategic frame.',
-                    milestone: 'Adaptive services become invisible infrastructure',
+                    description:
+                      'A distinct scenario with a new strategic frame.',
+                    milestone:
+                      'Adaptive services become invisible infrastructure',
                     probability: 'Medium',
                     focus: 'Campus infrastructure',
                     keyDrivers: ['AI adoption', 'Sensor networks'],

@@ -64,12 +64,19 @@ export class SignalsController {
   @UseGuards(ThrottlerGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post(':id/vote')
-  vote(@Param('id', ParseIntPipe) id: number, @Body() dto: VoteSignalDto, @Request() req: AuthenticatedRequest) {
+  vote(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: VoteSignalDto,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.signalsService.vote(id, dto, req.user.id);
   }
 
   @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number, @Request() req: AuthenticatedRequest) {
+  delete(
+    @Param('id', ParseIntPipe) id: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
     return this.signalsService.delete(id, req.user);
   }
 }

@@ -21,7 +21,10 @@ function toArray(value: unknown) {
   if (Array.isArray(value)) return value;
   if (value === undefined || value === null || value === '') return undefined;
   if (typeof value === 'string' && value.includes(',')) {
-    return value.split(',').map(item => item.trim()).filter(Boolean);
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
   }
   return [value];
 }

@@ -18,7 +18,7 @@ export class AppController {
   async testDb() {
     try {
       const signals = await this.prisma.signal.findMany({
-        where: { deletedAt: null, workshopId: null }
+        where: { deletedAt: null, workshopId: null },
       });
       return { success: true, count: signals.length, signals };
     } catch (error) {

@@ -4,11 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  NotificationType,
-  Prisma,
-  UserRole,
-} from '@prisma/client';
+import { NotificationType, Prisma, UserRole } from '@prisma/client';
 import { AuthenticatedUser } from '../auth/jwt.guard';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import {
@@ -116,7 +112,9 @@ export class NotificationsService {
     ]);
 
     return {
-      data: notifications.map(notification => this.toNotification(notification)),
+      data: notifications.map((notification) =>
+        this.toNotification(notification),
+      ),
       meta: {
         total,
         unread,
@@ -191,7 +189,7 @@ export class NotificationsService {
     }
 
     const notifications = await this.prisma.$transaction(
-      allowedUserIds.map(userId =>
+      allowedUserIds.map((userId) =>
         this.prisma.notification.create({
           data: this.toCreateData({ ...input, userId }),
           include: notificationInclude,
@@ -200,7 +198,7 @@ export class NotificationsService {
     );
 
     await Promise.all(
-      notifications.map(async notification => {
+      notifications.map(async (notification) => {
         const mappedNotification = this.toNotification(notification);
         const unread = await this.countUnread(notification.userId);
         this.notificationsGateway.emitNewNotification(
@@ -213,7 +211,7 @@ export class NotificationsService {
 
     return {
       count: notifications.length,
-      notifications: notifications.map(notification =>
+      notifications: notifications.map((notification) =>
         this.toNotification(notification),
       ),
     };
@@ -277,7 +275,10 @@ export class NotificationsService {
     return mappedNotification;
   }
 
-  async broadcast(currentUser: AuthenticatedUser, dto: BroadcastNotificationDto) {
+  async broadcast(
+    currentUser: AuthenticatedUser,
+    dto: BroadcastNotificationDto,
+  ) {
     this.assertAdmin(currentUser);
 
     const title = dto.title.trim();
@@ -305,7 +306,7 @@ export class NotificationsService {
     });
 
     return this.createForUsers(
-      recipients.map(user => user.id),
+      recipients.map((user) => user.id),
       {
         actorId: currentUser.id,
         href: dto.href,
@@ -414,7 +415,7 @@ export class NotificationsService {
       if (!scenario) return;
 
       const recipients = await this.getWorkshopAudience(
-        scenario.workshop.participants.map(participant => participant.userId),
+        scenario.workshop.participants.map((participant) => participant.userId),
         actorId,
       );
 
@@ -454,7 +455,7 @@ export class NotificationsService {
       if (!scenario) return;
 
       const recipients = await this.getWorkshopAudience(
-        scenario.workshop.participants.map(participant => participant.userId),
+        scenario.workshop.participants.map((participant) => participant.userId),
         actorId,
       );
 
@@ -488,7 +489,7 @@ export class NotificationsService {
       if (!scenario) return;
 
       const recipients = await this.getWorkshopAudience(
-        scenario.workshop.participants.map(participant => participant.userId),
+        scenario.workshop.participants.map((participant) => participant.userId),
         actorId,
       );
 
@@ -536,15 +537,16 @@ export class NotificationsService {
       select: { id: true },
     });
 
-    return users.map(user => user.id);
+    return users.map((user) => user.id);
   }
 
   private async getWorkshopAudience(
     participantUserIds: number[],
     actorId?: number | null,
   ) {
-    const uniqueParticipantIds = [...new Set(participantUserIds)]
-      .filter(userId => userId !== actorId);
+    const uniqueParticipantIds = [...new Set(participantUserIds)].filter(
+      (userId) => userId !== actorId,
+    );
 
     if (uniqueParticipantIds.length > 0) {
       return uniqueParticipantIds;
@@ -566,10 +568,10 @@ export class NotificationsService {
       select: preferenceSelect,
     });
     const preferenceByUserId = new Map<number, PreferenceRecord>(
-      preferences.map(preference => [preference.userId, preference]),
+      preferences.map((preference) => [preference.userId, preference]),
     );
 
-    return uniqueUserIds.filter(userId => {
+    return uniqueUserIds.filter((userId) => {
       const preference = preferenceByUserId.get(userId);
       if (!preference) return true;
       if (!preference.inAppEnabled) return false;
@@ -626,7 +628,9 @@ export class NotificationsService {
     );
   }
 
-  private toCreateData(input: NotificationInput): Prisma.NotificationCreateInput {
+  private toCreateData(
+    input: NotificationInput,
+  ): Prisma.NotificationCreateInput {
     return {
       type: input.type,
       title: input.title,

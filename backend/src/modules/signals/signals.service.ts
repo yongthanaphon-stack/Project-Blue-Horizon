@@ -1,4 +1,9 @@
-import { Injectable, ForbiddenException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import {
@@ -57,7 +62,9 @@ const featuredSignalSelect = {
   _count: { select: { votes: true } },
 } satisfies Prisma.SignalSelect;
 
-type FeaturedSignal = Prisma.SignalGetPayload<{ select: typeof featuredSignalSelect }>;
+type FeaturedSignal = Prisma.SignalGetPayload<{
+  select: typeof featuredSignalSelect;
+}>;
 
 const suggestionSignalSelect = {
   id: true,
@@ -111,17 +118,23 @@ function withSignalPresentation<T extends SignalPresentationFields>(signal: T) {
 
   return {
     ...signal,
-    impactScore: totalVotes > 0 ? signal.impactScore ?? null : null,
+    impactScore: totalVotes > 0 ? (signal.impactScore ?? null) : null,
     communityInterest: getCommunityInterest(totalVotes),
   };
 }
 
 function getPestelSearchCategory(search: string): PestelCategory | undefined {
-  const normalized = search.trim().toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+  const normalized = search
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, ' ')
+    .trim();
   return PESTEL_SEARCH_ALIASES[normalized];
 }
 
-function buildSignalSearchConditions(search: string): Prisma.SignalWhereInput[] {
+function buildSignalSearchConditions(
+  search: string,
+): Prisma.SignalWhereInput[] {
   const term = search.trim();
   if (!term) return [];
 
@@ -151,7 +164,7 @@ function normalizeTagList(tags: unknown[] = [], limit = 12) {
   const normalizedTags: string[] = [];
   const seenTags = new Set<string>();
 
-  tags.forEach(tag => {
+  tags.forEach((tag) => {
     const normalizedTag = normalizeTag(tag);
     if (!normalizedTag || seenTags.has(normalizedTag)) return;
 
@@ -162,7 +175,11 @@ function normalizeTagList(tags: unknown[] = [], limit = 12) {
   return normalizedTags.slice(0, limit);
 }
 
-function incrementTagCount(counts: Map<string, number>, tag: string, amount = 1) {
+function incrementTagCount(
+  counts: Map<string, number>,
+  tag: string,
+  amount = 1,
+) {
   counts.set(tag, (counts.get(tag) || 0) + amount);
 }
 
@@ -184,9 +201,10 @@ function rankTagCounts(
   return Array.from(counts.entries())
     .filter(([tag]) => !excludeTags.has(tag))
     .filter(([tag]) => !normalizedQuery || tag.includes(normalizedQuery))
-    .sort(([tagA, countA], [tagB, countB]) => (
-      countB - countA || tagA.localeCompare(tagB)
-    ))
+    .sort(
+      ([tagA, countA], [tagB, countB]) =>
+        countB - countA || tagA.localeCompare(tagB),
+    )
     .slice(0, limit)
     .map(([tag, count]) => ({
       tag,
@@ -236,10 +254,7 @@ export class SignalsService {
         ...where,
         name: { in: FEATURED_SIGNAL_NAMES },
       },
-      orderBy: [
-        { createdAt: 'desc' },
-        { id: 'desc' },
-      ],
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       select: featuredSignalSelect,
     });
 
@@ -250,8 +265,7 @@ export class SignalsService {
       }
     }
 
-    const selected = FEATURED_SIGNAL_NAMES
-      .map((name) => latestByName.get(name))
+    const selected = FEATURED_SIGNAL_NAMES.map((name) => latestByName.get(name))
       .filter((signal): signal is FeaturedSignal => Boolean(signal))
       .slice(0, take);
 
@@ -328,10 +342,7 @@ export class SignalsService {
         pestelCategories: true,
       },
       take: 500,
-      orderBy: [
-        { updatedAt: 'desc' },
-        { id: 'desc' },
-      ],
+      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     });
 
     const popularCounts = new Map<string, number>();
@@ -340,12 +351,15 @@ export class SignalsService {
 
     signals.forEach((signal: TagSignalSource) => {
       const signalTags = normalizeTagList(signal.tags, 24);
-      const hasSelectedTag = signalTags.some(tag => selectedTags.has(tag));
-      const isCategoryMatch = pestelCategories.size === 0
-        ? false
-        : signal.pestelCategories.some(category => pestelCategories.has(category));
+      const hasSelectedTag = signalTags.some((tag) => selectedTags.has(tag));
+      const isCategoryMatch =
+        pestelCategories.size === 0
+          ? false
+          : signal.pestelCategories.some((category) =>
+              pestelCategories.has(category),
+            );
 
-      signalTags.forEach(tag => {
+      signalTags.forEach((tag) => {
         incrementTagCount(popularCounts, tag);
 
         if (isCategoryMatch) {
@@ -398,19 +412,25 @@ export class SignalsService {
 
     // PESTEL filter includes multi-category signals that contain any selected category.
     if (query.pestel) {
-      const pestelArray = Array.isArray(query.pestel) ? query.pestel : [query.pestel];
+      const pestelArray = Array.isArray(query.pestel)
+        ? query.pestel
+        : [query.pestel];
       where.pestelCategories = { hasSome: pestelArray };
     }
 
     // Multi-select Impact Level filter (OR logic within field)
     if (query.impact) {
-      const impactArray = Array.isArray(query.impact) ? query.impact : [query.impact];
+      const impactArray = Array.isArray(query.impact)
+        ? query.impact
+        : [query.impact];
       where.impactLevel = { in: impactArray };
     }
 
     // Multi-select Time Horizon filter (OR logic within field)
     if (query.horizon) {
-      const horizonArray = Array.isArray(query.horizon) ? query.horizon : [query.horizon];
+      const horizonArray = Array.isArray(query.horizon)
+        ? query.horizon
+        : [query.horizon];
       where.timeHorizon = { in: horizonArray };
     }
 
@@ -460,10 +480,7 @@ export class SignalsService {
         workshopId: null,
         isGlobal: true,
         votes: { none: { userId } },
-        OR: [
-          { ownerId: null },
-          { ownerId: { not: userId } },
-        ],
+        OR: [{ ownerId: null }, { ownerId: { not: userId } }],
       },
       orderBy: { createdAt: 'desc' },
       take: 6,
@@ -481,9 +498,14 @@ export class SignalsService {
       where: { id },
       include: {
         references: true,
-        votes: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+        votes: {
+          include: { user: { select: { id: true, name: true, avatar: true } } },
+        },
         _count: { select: { votes: true } },
-        histories: { include: { user: { select: { name: true } } }, orderBy: { createdAt: 'desc' } },
+        histories: {
+          include: { user: { select: { name: true } } },
+          orderBy: { createdAt: 'desc' },
+        },
         scenarios: true,
       },
     });
@@ -499,7 +521,9 @@ export class SignalsService {
 
     const safeDescription = purify.sanitize(signalData.description || '');
     const safeName = purify.sanitize(signalData.name || '');
-    const safeShortDetails = signalData.shortDetails ? purify.sanitize(signalData.shortDetails) : '';
+    const safeShortDetails = signalData.shortDetails
+      ? purify.sanitize(signalData.shortDetails)
+      : '';
 
     const signal = await this.prisma.signal.create({
       data: {
@@ -526,8 +550,8 @@ export class SignalsService {
           create: {
             action: 'CREATED',
             userId,
-          }
-        }
+          },
+        },
       },
       include: { references: true },
     });
@@ -539,7 +563,8 @@ export class SignalsService {
 
   async update(id: number, dto: UpdateSignalDto, user: any) {
     const signal = await this.prisma.signal.findUnique({ where: { id } });
-    if (!signal || signal.deletedAt) throw new NotFoundException('Signal not found');
+    if (!signal || signal.deletedAt)
+      throw new NotFoundException('Signal not found');
 
     if (user.role !== 'ADMIN' && signal.ownerId !== user.id) {
       throw new ForbiddenException('You can only edit your own signals');
@@ -547,7 +572,8 @@ export class SignalsService {
 
     const { references, tags, ...signalData } = omitSignalComputedFields(dto);
     const purify = await getSanitizer();
-    if (signalData.description) signalData.description = purify.sanitize(signalData.description);
+    if (signalData.description)
+      signalData.description = purify.sanitize(signalData.description);
     if (signalData.name) signalData.name = purify.sanitize(signalData.name);
 
     const wasPublishedGlobal =
@@ -565,8 +591,8 @@ export class SignalsService {
             action: 'UPDATED',
             changes: JSON.stringify(Object.keys(signalData)),
             userId: user.id,
-          }
-        }
+          },
+        },
       },
       include: { references: true },
     });
@@ -580,8 +606,10 @@ export class SignalsService {
 
   async vote(id: number, dto: VoteSignalDto, userId: number) {
     const signal = await this.prisma.signal.findUnique({ where: { id } });
-    if (!signal || signal.deletedAt) throw new NotFoundException('Signal not found');
-    if (signal.ownerId === userId) throw new BadRequestException('Cannot vote for your own signal');
+    if (!signal || signal.deletedAt)
+      throw new NotFoundException('Signal not found');
+    if (signal.ownerId === userId)
+      throw new BadRequestException('Cannot vote for your own signal');
 
     await this.prisma.signalVote.upsert({
       where: {
@@ -619,16 +647,19 @@ export class SignalsService {
   async delete(id: number, user: any) {
     const signal = await this.prisma.signal.findUnique({
       where: { id },
-      include: { scenarios: true }
+      include: { scenarios: true },
     });
-    if (!signal || signal.deletedAt) throw new NotFoundException('Signal not found');
+    if (!signal || signal.deletedAt)
+      throw new NotFoundException('Signal not found');
 
     if (user.role !== 'ADMIN' && signal.ownerId !== user.id) {
       throw new ForbiddenException('You can only delete your own signals');
     }
 
     if (signal.scenarios && signal.scenarios.length > 0) {
-      throw new BadRequestException('Cannot delete signal linked to a scenario');
+      throw new BadRequestException(
+        'Cannot delete signal linked to a scenario',
+      );
     }
 
     const deletedSignal = await this.prisma.signal.update({
@@ -639,9 +670,9 @@ export class SignalsService {
           create: {
             action: 'DELETED',
             userId: user.id,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     return withSignalPresentation(deletedSignal);
