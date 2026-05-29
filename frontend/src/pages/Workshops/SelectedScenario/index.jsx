@@ -4,8 +4,7 @@ import { ArrowRight, Bookmark, CheckCircle2, Lock, ShieldCheck } from 'lucide-re
 import { scenariosApi, workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 import { useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
-import { mockScenarios } from '../../../mocks/mockData';
-import { FALLBACK_SCENARIOS, createScenarioViewModel, getFocusClass } from '../scenarioData';
+import { createScenarioViewModel, getFocusClass } from '../scenarioData';
 
 const BOOKMARK_STORAGE_PREFIX = 'blueHorizonSelectedScenarioBookmarks';
 
@@ -52,10 +51,6 @@ function sortSelectedScenarios(a, b, bookmarkedScenarioIds) {
   }
 
   return compareScenarioTitle(a, b);
-}
-
-function getFallbackScenario() {
-  return mockScenarios.find(scenario => scenario.isSelected) || FALLBACK_SCENARIOS[0];
 }
 
 export default function SelectedScenario() {
@@ -130,7 +125,7 @@ export default function SelectedScenario() {
         setSelectedScenarios(
           stateScenarios.length
             ? stateScenarios.map(createScenarioViewModel)
-            : [createScenarioViewModel(getFallbackScenario())],
+            : [],
         );
       } finally {
         if (isMounted) {

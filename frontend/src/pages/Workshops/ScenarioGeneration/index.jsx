@@ -822,7 +822,7 @@ export default function ScenarioGeneration() {
   const isSelectionLockedForUser = isScenarioLocked && !canViewAdmin;
   const canSaveScenario = selectedScenarioCount > 0 && !isSavingScenario;
   const canUseHeaderAction = isSelectionLockedForUser ? selectedScenarioCount > 0 : canSaveScenario;
-  const actionCount = Math.max(4, scenarios.length);
+  const actionCount = scenarios.length;
   let headerActionLabel = 'SAVE';
   let headerActionAriaLabel = 'Select one scenario before saving';
 
@@ -916,7 +916,11 @@ export default function ScenarioGeneration() {
 
               <div className="scenario-ref-section-actions">
                 <span className="scenario-ref-status-pill">
-                  {isSelectionLockedForUser ? 'LOCKED' : `${actionCount} ACTION REQUIRED`}
+                  {isSelectionLockedForUser
+                    ? 'LOCKED'
+                    : actionCount
+                      ? `${actionCount} ACTION REQUIRED`
+                      : 'NO SCENARIOS'}
                 </span>
 
                 {!isSelectionLockedForUser && (
@@ -938,16 +942,28 @@ export default function ScenarioGeneration() {
             </div>
 
             <div className="scenario-ref-grid">
-              {scenarios.map(scenario => (
-                <ScenarioCard
-                  key={scenario.id}
-                  scenario={scenario}
-                  isSelected={isScenarioSelected(scenario)}
-                  isLocked={isSelectionLockedForUser}
-                  onToggle={toggleScenarioSelection}
-                  onDetail={setDetailScenario}
-                />
-              ))}
+              {scenarios.length ? (
+                scenarios.map(scenario => (
+                  <ScenarioCard
+                    key={scenario.id}
+                    scenario={scenario}
+                    isSelected={isScenarioSelected(scenario)}
+                    isLocked={isSelectionLockedForUser}
+                    onToggle={toggleScenarioSelection}
+                    onDetail={setDetailScenario}
+                  />
+                ))
+              ) : (
+                <div className="scenario-ref-empty">
+                  <span className="scenario-ref-empty-icon">
+                    <Sparkles size={20} />
+                  </span>
+                  <div className="scenario-ref-empty-copy">
+                    <p>No scenarios generated yet</p>
+                    <small>Use Generate with AI after selecting signals in Environmental Scanning.</small>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 

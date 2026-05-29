@@ -8281,6 +8281,10 @@ button.ws-new-btn {
   line-height: 1.45;
 }
 
+.scenario-ref-grid .scenario-ref-empty {
+  grid-column: 1 / -1;
+}
+
 .scenario-ref-selection-action {
   min-height: 38px;
   max-width: 100%;

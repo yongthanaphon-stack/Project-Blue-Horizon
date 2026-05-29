@@ -5,10 +5,10 @@ import { scenariosApi, swotApi, workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 import { useAuth } from '../../../hooks/useAuth';
 import { useSwotCollaboration, useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
-import { mockScenarios, mockSwot } from '../../../mocks/mockData';
+import { mockSwot } from '../../../mocks/mockData';
 import { createScenarioViewModel, getFocusClass } from '../scenarioData';
 
-const INITIAL_SCENARIO = createScenarioViewModel(mockScenarios[0], 0);
+const INITIAL_SCENARIO = createScenarioViewModel();
 const SWOT_KEYS = ['strengths', 'weaknesses', 'opportunities', 'threats'];
 
 function mergeItems(fallbackItems = [], sourceItems = []) {
@@ -73,9 +73,7 @@ export default function SwotAnalysis() {
     }).catch(err => {
       console.error(err);
       if (isMounted) {
-        setScenario(createScenarioViewModel(
-          mockScenarios.find(item => String(item.id) === String(scenarioId)) || mockScenarios[0],
-        ));
+        setScenario(createScenarioViewModel());
       }
     });
 

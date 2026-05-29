@@ -287,57 +287,6 @@ async function main() {
     }
   }
 
-  // Create scenarios for workshop1
-  const scenario1 = await prisma.scenario.create({
-    data: {
-      title: 'Scenario A: Distributed Resilience',
-      description: 'A world where local networks drive global stability through decentralized energy and data infrastructure. Small-scale manufacturing becomes the backbone of urban centers.',
-      focus: 'RISK FOCUS',
-      probability: 'HIGH PROBABILITY',
-      milestone: '2025 Q3 MILESTONE',
-      keyDrivers: ['Decentralized Energy', 'Edge Computing', 'Circular Economies'],
-      isSelected: true,
-      workshopId: workshop1.id,
-    },
-  });
-
-  await prisma.scenario.create({
-    data: {
-      title: 'Scenario B: Regulated Monopolies',
-      description: 'Centralized authorities enforce strict market controls to maintain service parity. Innovation is slow but predictable, and critical services are heavily subsidized.',
-      focus: 'STABILITY FOCUS',
-      keyDrivers: ['Public Policy', 'Big Tech Regulation', 'Universal Basic Services'],
-      workshopId: workshop1.id,
-    },
-  });
-
-  // Create SWOT for scenario1
-  await prisma.swotAnalysis.create({
-    data: {
-      scenarioId: scenario1.id,
-      strengths: [
-        'High modularity in local infrastructure allows for rapid failure isolation.',
-        'Strong community-driven innovation hubs reduce reliance on central R&D.',
-        'Diverse talent pool across decentralized geographic locations.',
-      ],
-      weaknesses: [
-        'Fragmented resource management leads to duplication of efforts across nodes.',
-        'High initial capital expenditure for multi-node setup.',
-        'Complex governance models slow down global decision-making.',
-      ],
-      opportunities: [
-        'Emerging blockchain-based policy frameworks for autonomous coordination.',
-        'Expansion into underdeveloped markets through micro-resilience units.',
-        "Strategic partnerships with local governments for 'Grid-as-a-Service'.",
-      ],
-      threats: [
-        'Increasing climate volatility exceeding the design limits of local nodes.',
-        'Geopolitical shifts leading to trade restrictions on critical components.',
-        'Centralized incumbents lobbying for restrictive regulatory barriers.',
-      ],
-    },
-  });
-
   await prisma.notificationPreference.upsert({
     where: { userId: users[0].id },
     update: {
@@ -362,14 +311,6 @@ async function main() {
         message: `${signals[7].name} is ready for impact scoring in the Signal Bank.`,
         href: `/signals/${signals[7].id}`,
         metadata: { signalId: signals[7].id },
-      },
-      {
-        userId: users[0].id,
-        type: 'SCENARIO_SELECTED',
-        title: 'Scenario selected',
-        message: `${scenario1.title} was selected for SWOT analysis.`,
-        href: `/workshop/${workshop1.id}/scenarios/${scenario1.id}/swot`,
-        metadata: { scenarioId: scenario1.id, workshopId: workshop1.id },
       },
       {
         userId: users[0].id,

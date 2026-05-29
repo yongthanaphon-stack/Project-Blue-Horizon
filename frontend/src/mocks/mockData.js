@@ -117,22 +117,7 @@ export const mockOutputs = [
   { id: 3, name: 'Digital Sovereignty Impact Matrix', type: 'Analysis Paper', createdBy: 'Mark Thompson', date: '2023-10-09' },
 ];
 
-export const mockScenarios = [
-  {
-    id: 1, title: 'Scenario A: Distributed Resilience',
-    description: 'A world where local networks drive global stability through decentralized energy and data infrastructure. Small-scale manufacturing becomes the backbone of urban centers.',
-    focus: 'RISK FOCUS', probability: 'HIGH PROBABILITY', milestone: '2025 Q3 MILESTONE',
-    keyDrivers: ['Decentralized Energy', 'Edge Computing', 'Circular Economies'],
-    isSelected: true,
-  },
-  {
-    id: 2, title: 'Scenario B: Regulated Monopolies',
-    description: 'Centralized authorities enforce strict market controls to maintain service parity. Innovation is slow but predictable, and critical services are heavily subsidized.',
-    focus: 'STABILITY FOCUS',
-    keyDrivers: ['Public Policy', 'Big Tech Regulation', 'Universal Basic Services'],
-    isSelected: false,
-  },
-];
+export const mockScenarios = [];
 
 export const mockSwot = {
   strengths: [
