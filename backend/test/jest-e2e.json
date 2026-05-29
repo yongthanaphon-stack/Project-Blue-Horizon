@@ -7,6 +7,9 @@
     "^.+\\.(t|j)s$": [
       "ts-jest",
       {
+        "tsconfig": {
+          "isolatedModules": true
+        },
         "diagnostics": {
           "ignoreCodes": [151002]
         }

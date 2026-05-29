@@ -321,7 +321,7 @@ export class AdminUsersService {
     }
   }
 
-  private isAdminRole(role: string | UserRole) {
+  private isAdminRole(role?: string | null) {
     return ADMIN_ROLES.includes(role as UserRole);
   }
 

@@ -16,6 +16,42 @@ import {
 } from './dto/scenario.dto';
 import OpenAI from 'openai';
 
+type AiScenarioData = {
+  title: string;
+  description: string;
+  milestone: string;
+  probability: string;
+  focus: string;
+  keyDrivers?: string[];
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isAiScenarioData(value: unknown): value is AiScenarioData {
+  if (!isRecord(value)) return false;
+
+  const requiredFields: Array<keyof Omit<AiScenarioData, 'keyDrivers'>> = [
+    'title',
+    'description',
+    'milestone',
+    'probability',
+    'focus',
+  ];
+  const hasRequiredFields = requiredFields.every(
+    (field) => typeof value[field] === 'string' && value[field].trim(),
+  );
+  const keyDrivers = value.keyDrivers;
+
+  return (
+    hasRequiredFields &&
+    (keyDrivers === undefined ||
+      (Array.isArray(keyDrivers) &&
+        keyDrivers.every((driver) => typeof driver === 'string')))
+  );
+}
+
 @Injectable()
 export class ScenariosService {
   private aiClient: OpenAI;
@@ -400,34 +436,24 @@ export class ScenariosService {
       .replace(/\s*```$/i, '')
       .trim();
 
-    let parsedData;
+    let parsedData: unknown;
     try {
       parsedData = JSON.parse(aiContent);
-    } catch (parseError) {
+    } catch {
       console.error('Failed to parse AI Content:', aiContent);
       throw new BadGatewayException('AI response format is invalid.');
     }
 
-    const scenarioData = Array.isArray(parsedData) ? parsedData[0] : parsedData;
+    const parsedItems = Array.isArray(parsedData)
+      ? (parsedData as unknown[])
+      : undefined;
+    const scenarioData = parsedItems ? parsedItems[0] : parsedData;
 
-    if (
-      !scenarioData?.title ||
-      !scenarioData?.description ||
-      !scenarioData?.milestone ||
-      !scenarioData?.probability ||
-      !scenarioData?.focus
-    ) {
+    if (!isAiScenarioData(scenarioData)) {
       throw new BadGatewayException('AI response is missing scenario fields.');
     }
 
-    return scenarioData as {
-      title: string;
-      description: string;
-      milestone: string;
-      probability: string;
-      focus: string;
-      keyDrivers?: string[];
-    };
+    return scenarioData;
   }
 
   private normalizeTitle(title: string) {

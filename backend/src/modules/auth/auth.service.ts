@@ -17,6 +17,10 @@ type AuthUser = {
   preferredFont?: string | null;
 };
 
+type JwtPayload = {
+  user: AuthUser;
+};
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -70,7 +74,7 @@ export class AuthService {
 
   async me(token: string) {
     try {
-      const payload = await this.jwtService.verifyAsync(token);
+      const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
       const user = await this.prisma.user.findUnique({
         where: { id: payload.user.id },
       });

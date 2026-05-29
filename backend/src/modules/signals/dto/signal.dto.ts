@@ -17,8 +17,8 @@ import {
 } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 
-function toArray(value: unknown) {
-  if (Array.isArray(value)) return value;
+function toArray(value: unknown): unknown[] | undefined {
+  if (Array.isArray(value)) return value as unknown[];
   if (value === undefined || value === null || value === '') return undefined;
   if (typeof value === 'string' && value.includes(',')) {
     return value

@@ -3,7 +3,19 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { PrismaService } from '../../core/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ScenariosService } from './scenarios.service';
+
+function objectContaining<T extends object>(value: Partial<T>): T {
+  const matcher: unknown = expect.objectContaining(value);
+  return matcher as T;
+}
+
+function stringContaining(value: string): string {
+  const matcher: unknown = expect.stringContaining(value);
+  return matcher as string;
+}
 
 describe('ScenariosService AI generation', () => {
   const originalApiKey = process.env.DOTBLUE_API_KEY;
@@ -90,7 +102,10 @@ describe('ScenariosService AI generation', () => {
     const notifications = {
       notifyScenarioCreated: jest.fn().mockResolvedValue(undefined),
     };
-    const service = new ScenariosService(prisma as any, notifications as any);
+    const service = new ScenariosService(
+      prisma as unknown as PrismaService,
+      notifications as unknown as NotificationsService,
+    );
     const defaultAiResponse = aiResponse ?? {
       choices: [
         {
@@ -106,13 +121,15 @@ describe('ScenariosService AI generation', () => {
     });
     aiCreate.mockResolvedValue(defaultAiResponse);
 
-    (service as any).aiClient = {
-      chat: {
-        completions: {
-          create: aiCreate,
+    Object.defineProperty(service, 'aiClient', {
+      value: {
+        chat: {
+          completions: {
+            create: aiCreate,
+          },
         },
       },
-    };
+    });
 
     return { service, prisma, notifications, aiCreate };
   }
@@ -150,7 +167,7 @@ describe('ScenariosService AI generation', () => {
       isSelected: false,
     });
     expect(prisma.scenario.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+      data: objectContaining({
         title: 'Adaptive Campus',
         keyDrivers: ['AI adoption', 'Digital infrastructure'],
       }),
@@ -164,7 +181,7 @@ describe('ScenariosService AI generation', () => {
     await service.generateScenarioFromAI(7, 9);
 
     expect(aiCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
+      objectContaining({
         model: 'openai/gpt-4o-mini',
       }),
     );
@@ -185,7 +202,7 @@ describe('ScenariosService AI generation', () => {
       workshopId: 7,
     });
     expect(prisma.scenario.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+      data: objectContaining({
         description: 'Scenario from streamed chunks',
         keyDrivers: ['AI platforms'],
       }),
@@ -230,19 +247,19 @@ describe('ScenariosService AI generation', () => {
     await service.generateScenarioFromAI(7, 9);
 
     expect(aiCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
+      objectContaining({
         messages: [
-          expect.objectContaining({
-            content: expect.stringContaining('Scenario เดิมที่ต้องหลีกเลี่ยง'),
+          objectContaining({
+            content: stringContaining('Scenario เดิมที่ต้องหลีกเลี่ยง'),
           }),
         ],
       }),
     );
     expect(aiCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
+      objectContaining({
         messages: [
-          expect.objectContaining({
-            content: expect.stringContaining('Adaptive Campus'),
+          objectContaining({
+            content: stringContaining('Adaptive Campus'),
           }),
         ],
       }),
@@ -271,30 +288,28 @@ describe('ScenariosService AI generation', () => {
     await service.generateScenarioFromAI(7, 9);
 
     expect(aiCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
+      objectContaining({
         messages: [
-          expect.objectContaining({
-            content: expect.stringContaining('หัวข้อและเป้าหมายของ Workshop'),
+          objectContaining({
+            content: stringContaining('หัวข้อและเป้าหมายของ Workshop'),
           }),
         ],
       }),
     );
     expect(aiCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
+      objectContaining({
         messages: [
-          expect.objectContaining({
-            content: expect.stringContaining(
-              'อนาคตมหาวิทยาลัยไทยในยุคประชากรลดลง',
-            ),
+          objectContaining({
+            content: stringContaining('อนาคตมหาวิทยาลัยไทยในยุคประชากรลดลง'),
           }),
         ],
       }),
     );
     expect(aiCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
+      objectContaining({
         messages: [
-          expect.objectContaining({
-            content: expect.stringContaining(
+          objectContaining({
+            content: stringContaining(
               'สร้างฉากทัศน์สำหรับกลยุทธ์มหาวิทยาลัยไทยเมื่อจำนวนนักศึกษาลดลง',
             ),
           }),
@@ -373,7 +388,7 @@ describe('ScenariosService AI generation', () => {
       title: 'Ambient Learning Grid',
     });
     expect(prisma.scenario.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({
+      data: objectContaining({
         title: 'Ambient Learning Grid',
       }),
     });
@@ -393,19 +408,19 @@ describe('ScenariosService AI generation', () => {
     ]);
 
     expect(aiCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
+      objectContaining({
         messages: [
-          expect.objectContaining({
-            content: expect.stringContaining('สัญญาณที่เลือกจากเรดาร์'),
+          objectContaining({
+            content: stringContaining('สัญญาณที่เลือกจากเรดาร์'),
           }),
         ],
       }),
     );
     expect(aiCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
+      objectContaining({
         messages: [
-          expect.objectContaining({
-            content: expect.stringContaining('Radar AI Advising Assistants'),
+          objectContaining({
+            content: stringContaining('Radar AI Advising Assistants'),
           }),
         ],
       }),
@@ -432,7 +447,10 @@ describe('ScenariosService scenario editing', () => {
     };
 
     return {
-      service: new ScenariosService(prisma as any, notifications as any),
+      service: new ScenariosService(
+        prisma as unknown as PrismaService,
+        notifications as unknown as NotificationsService,
+      ),
       prisma,
     };
   }

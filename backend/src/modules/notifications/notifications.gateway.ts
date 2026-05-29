@@ -7,7 +7,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { JwtService } from '@nestjs/jwt';
-import { Server, Socket } from 'socket.io';
+import { Server, Socket, type DefaultEventsMap } from 'socket.io';
 import {
   PresenceService,
   PresenceUser,
@@ -36,11 +36,23 @@ type NotificationPayload = {
   isUnread: boolean;
 };
 
-type AuthenticatedSocket = Socket & {
-  data: {
-    user?: AuthenticatedUser;
-  };
+type SocketData = {
+  user?: AuthenticatedUser;
 };
+
+export type AuthenticatedSocket = Socket<
+  DefaultEventsMap,
+  DefaultEventsMap,
+  DefaultEventsMap,
+  SocketData
+>;
+
+type NotificationsServer = Server<
+  DefaultEventsMap,
+  DefaultEventsMap,
+  DefaultEventsMap,
+  SocketData
+>;
 
 type WorkshopPresencePayload = {
   workshopId?: number | string;
@@ -74,6 +86,10 @@ const SWOT_QUADRANTS = new Set([
 
 const RADAR_ACTIONS = new Set(['added', 'edited', 'removed', 'synced']);
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 @WebSocketGateway({
   namespace: 'notifications',
   cors: {
@@ -85,7 +101,7 @@ export class NotificationsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
   @WebSocketServer()
-  private server!: Server;
+  private server!: NotificationsServer;
 
   constructor(
     private readonly jwtService: JwtService,
@@ -175,16 +191,14 @@ export class NotificationsGateway
   }
 
   @SubscribeMessage('workshop:unwatch')
-  async handleWorkshopUnwatch(
+  handleWorkshopUnwatch(
     @ConnectedSocket() client: AuthenticatedSocket,
     payload: WorkshopPresencePayload,
   ) {
     const workshopIds = this.parseWorkshopIds(payload?.workshopIds);
-    await Promise.all(
-      workshopIds.map((workshopId) =>
-        client.leave(this.getWorkshopRoom(workshopId)),
-      ),
-    );
+    workshopIds.forEach((workshopId) => {
+      void client.leave(this.getWorkshopRoom(workshopId));
+    });
   }
 
   @SubscribeMessage('workshop:join')
@@ -408,8 +422,9 @@ export class NotificationsGateway
     });
   }
 
-  private extractToken(client: Socket) {
-    const authToken = client.handshake.auth?.token;
+  private extractToken(client: AuthenticatedSocket) {
+    const auth: unknown = client.handshake.auth;
+    const authToken = isRecord(auth) ? auth.token : undefined;
     if (typeof authToken === 'string' && authToken.trim()) {
       return authToken;
     }
@@ -464,7 +479,9 @@ export class NotificationsGateway
     });
   }
 
-  private getAuthenticatedUser(client: AuthenticatedSocket) {
+  private getAuthenticatedUser(
+    client: AuthenticatedSocket,
+  ): AuthenticatedUser | undefined {
     const user = client.data.user;
     if (!user) {
       client.emit('collaboration:error', {
@@ -485,7 +502,7 @@ export class NotificationsGateway
     };
   }
 
-  private parsePositiveInt(value: number | string | undefined) {
+  private parsePositiveInt(value: number | string | undefined): number {
     const numericValue = Number(value);
     if (!Number.isInteger(numericValue) || numericValue <= 0) {
       throw new Error('Invalid identifier');
@@ -494,7 +511,9 @@ export class NotificationsGateway
     return numericValue;
   }
 
-  private parseWorkshopIds(value: Array<number | string> | undefined) {
+  private parseWorkshopIds(
+    value: Array<number | string> | undefined,
+  ): number[] {
     if (!Array.isArray(value)) return [];
 
     const workshopIds = value
@@ -504,7 +523,7 @@ export class NotificationsGateway
     return Array.from(new Set(workshopIds)).slice(0, 50);
   }
 
-  private parseSwotQuadrant(value: string | undefined) {
+  private parseSwotQuadrant(value: string | undefined): string {
     if (!value || !SWOT_QUADRANTS.has(value)) {
       throw new Error('Invalid SWOT quadrant');
     }
@@ -512,7 +531,7 @@ export class NotificationsGateway
     return value;
   }
 
-  private parseRadarAction(value: string | undefined) {
+  private parseRadarAction(value: string | undefined): string {
     if (!value || !RADAR_ACTIONS.has(value)) {
       return 'synced';
     }
@@ -520,7 +539,9 @@ export class NotificationsGateway
     return value;
   }
 
-  private parseOptionalIndex(value: number | string | null | undefined) {
+  private parseOptionalIndex(
+    value: number | string | null | undefined,
+  ): number | null {
     if (value === null || value === undefined || value === '') return null;
 
     const numericValue = Number(value);

@@ -22,7 +22,9 @@ export class AppController {
       });
       return { success: true, count: signals.length, signals };
     } catch (error) {
-      return { success: false, error: (error as any).message };
+      const message =
+        error instanceof Error ? error.message : 'Unknown database error';
+      return { success: false, error: message };
     }
   }
 }

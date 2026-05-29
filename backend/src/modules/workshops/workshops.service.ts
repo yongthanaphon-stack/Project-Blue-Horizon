@@ -1,4 +1,5 @@
 import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Prisma, TimeHorizon } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CreateWorkshopDto } from './dto/workshop.dto';
@@ -63,15 +64,17 @@ export class WorkshopsService {
       ...(actorId ? [actorId] : []),
     ]);
 
-    const workshopData: any = {
+    const workshopData: Prisma.WorkshopCreateInput = {
       name: data.name,
       description: data.description,
-      horizon: data.horizon || 'H1',
+      horizon: data.horizon || TimeHorizon.H1,
     };
 
     if (participantIds.size) {
       workshopData.participants = {
-        create: Array.from(participantIds).map((userId) => ({ userId })),
+        create: Array.from(participantIds).map((userId) => ({
+          user: { connect: { id: userId } },
+        })),
       };
     }
 

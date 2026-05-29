@@ -14,6 +14,7 @@ import {
   TagSuggestionQueryDto,
 } from './dto/signal.dto';
 import { PestelCategory, Prisma } from '@prisma/client';
+import { AuthenticatedUser } from '../auth/jwt.guard';
 
 const FEATURED_SIGNAL_NAMES = [
   'Automated Border Sovereignty Protocols',
@@ -82,11 +83,25 @@ type SignalComputedFields = {
   communityInterest?: unknown;
 };
 
+type SignalRelationFields = {
+  references?: unknown;
+  tags?: unknown;
+};
+
 function omitSignalComputedFields<T extends object>(dto: T): T {
   const writableDto = { ...dto } as T & SignalComputedFields;
   delete writableDto.impactScore;
   delete writableDto.totalVotes;
   delete writableDto.communityInterest;
+  return writableDto;
+}
+
+function omitSignalRelationFields<T extends object>(
+  dto: T,
+): Omit<T, keyof SignalRelationFields> {
+  const writableDto = { ...dto } as T & SignalRelationFields;
+  delete writableDto.references;
+  delete writableDto.tags;
   return writableDto;
 }
 
@@ -153,7 +168,9 @@ function buildSignalSearchConditions(
 }
 
 function normalizeTag(tag: unknown) {
-  return String(tag || '')
+  if (typeof tag !== 'string' && typeof tag !== 'number') return '';
+
+  return String(tag)
     .trim()
     .replace(/^#+/, '')
     .replace(/\s+/g, ' ')
@@ -561,16 +578,21 @@ export class SignalsService {
     return withSignalPresentation(signal);
   }
 
-  async update(id: number, dto: UpdateSignalDto, user: any) {
+  async update(id: number, dto: UpdateSignalDto, user: AuthenticatedUser) {
     const signal = await this.prisma.signal.findUnique({ where: { id } });
     if (!signal || signal.deletedAt)
       throw new NotFoundException('Signal not found');
 
-    if (user.role !== 'ADMIN' && signal.ownerId !== user.id) {
+    if (
+      user.role !== 'ADMIN' &&
+      user.role !== 'ADMIN_SYSTEM' &&
+      signal.ownerId !== user.id
+    ) {
       throw new ForbiddenException('You can only edit your own signals');
     }
 
-    const { references, tags, ...signalData } = omitSignalComputedFields(dto);
+    const { tags } = dto;
+    const signalData = omitSignalRelationFields(omitSignalComputedFields(dto));
     const purify = await getSanitizer();
     if (signalData.description)
       signalData.description = purify.sanitize(signalData.description);
@@ -644,7 +666,7 @@ export class SignalsService {
     return withSignalPresentation(updatedSignal);
   }
 
-  async delete(id: number, user: any) {
+  async delete(id: number, user: AuthenticatedUser) {
     const signal = await this.prisma.signal.findUnique({
       where: { id },
       include: { scenarios: true },
@@ -652,7 +674,11 @@ export class SignalsService {
     if (!signal || signal.deletedAt)
       throw new NotFoundException('Signal not found');
 
-    if (user.role !== 'ADMIN' && signal.ownerId !== user.id) {
+    if (
+      user.role !== 'ADMIN' &&
+      user.role !== 'ADMIN_SYSTEM' &&
+      signal.ownerId !== user.id
+    ) {
       throw new ForbiddenException('You can only delete your own signals');
     }
 

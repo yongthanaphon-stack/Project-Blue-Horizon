@@ -1,5 +1,12 @@
 import { PestelCategory } from '@prisma/client';
+import { PrismaService } from '../../core/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { SignalsService } from './signals.service';
+
+function objectContaining<T extends object>(value: Partial<T>): T {
+  const matcher: unknown = expect.objectContaining(value);
+  return matcher as T;
+}
 
 describe('SignalsService tag suggestions', () => {
   function createService(
@@ -16,7 +23,10 @@ describe('SignalsService tag suggestions', () => {
     const notifications = {};
 
     return {
-      service: new SignalsService(prisma as any, notifications as any),
+      service: new SignalsService(
+        prisma as unknown as PrismaService,
+        notifications as NotificationsService,
+      ),
       prisma,
     };
   }
@@ -41,15 +51,15 @@ describe('SignalsService tag suggestions', () => {
       },
     ]);
 
-    const suggestions = await (service as any).findTagSuggestions({
+    const suggestions = await service.findTagSuggestions({
       pestel: PestelCategory.TECHNOLOGICAL,
       tags: ['education'],
       limit: 5,
     });
 
     expect(prisma.signal.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({
+      objectContaining({
+        where: objectContaining({
           deletedAt: null,
           isGlobal: true,
           workshopId: null,
