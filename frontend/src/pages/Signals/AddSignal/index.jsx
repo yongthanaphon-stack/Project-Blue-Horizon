@@ -318,7 +318,7 @@ export default function AddSignal() {
 
         {/* Tags */}
         <div className="form-group">
-          <label className="form-label" htmlFor="tags">Smart Tags</label>
+          <label className="form-label" htmlFor="tags">Tags</label>
           <div className="smart-tags-input">
             <Tag />
             <div className="smart-tags-chip-row">
