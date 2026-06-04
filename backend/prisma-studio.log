@@ -1,0 +1,9 @@
+
+> backend@0.0.1 studio
+> node scripts/prisma-studio.js
+
+Loaded Prisma config from prisma.config.ts.
+
+
+Prisma Studio is running at: http://localhost:5555
+
