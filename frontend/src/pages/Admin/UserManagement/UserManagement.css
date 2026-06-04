@@ -719,12 +719,12 @@
     font-size: 0.9rem;
   }
 
-  .um-table {
+  .um-user-table {
     font-size: 0.8rem;
   }
 
-  .um-table th,
-  .um-table td {
+  .um-user-table th,
+  .um-user-table td {
     padding: 12px 8px;
   }
 
