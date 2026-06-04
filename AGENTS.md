@@ -117,6 +117,8 @@ Notes:
 - If changing Prisma schema, update `schema.prisma` and coordinate database
   state with `npx prisma db push` or a migration. Avoid destructive resets
   unless explicitly approved.
+- If adding or changing database tables, fields, enums, indexes, or relations,
+  update `docs/blue-horizon-erd.dbml` in the same task.
 
 ## Frontend Conventions
 

@@ -1,0 +1,284 @@
+// Blue Horizon ERD
+// Source of truth: backend/prisma/schema.prisma
+// Keep this file updated whenever Prisma tables, fields, enums, indexes, or relations change.
+
+Project BlueHorizon {
+  database_type: "PostgreSQL"
+  Note: "Strategic foresight workspace database. Update this DBML whenever backend/prisma/schema.prisma changes."
+}
+
+Enum SignalStatus {
+  DRAFT
+  PUBLISHED
+}
+
+Enum ImpactLevel {
+  GLOBAL
+  REGION
+  COUNTRY
+}
+
+Enum TimeHorizon {
+  H1
+  H2
+  H3
+}
+
+Enum PestelCategory {
+  POLITICAL
+  ECONOMIC
+  SOCIAL
+  TECHNOLOGICAL
+  ENVIRONMENTAL
+  LEGAL
+}
+
+Enum UserRole {
+  ANALYST
+  LEAD_ANALYST
+  ADMIN
+  ADMIN_SYSTEM
+}
+
+Enum NotificationType {
+  SIGNAL_NEEDS_VOTE
+  SIGNAL_VOTE_RECEIVED
+  SIGNAL_UPDATED
+  WORKSHOP_CREATED
+  WORKSHOP_REMINDER
+  SCENARIO_CREATED
+  SCENARIO_SELECTED
+  SWOT_UPDATED
+  DAILY_SUMMARY
+  SYSTEM_ANNOUNCEMENT
+}
+
+Table User {
+  id integer [pk, increment]
+  name text [not null]
+  email text [not null, unique]
+  passwordHash text [not null, default: ""]
+  role UserRole [not null, default: "ANALYST"]
+  avatar text
+  preferredFont text [not null, default: "google-sans-flex"]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, note: "Managed by Prisma @updatedAt"]
+
+  Indexes {
+    email [unique, name: "User_email_key"]
+  }
+
+  Note: "Application users. Auth uses passwordHash; never expose passwordHash in API responses."
+}
+
+Table Signal {
+  id integer [pk, increment]
+  name text [not null]
+  shortDetails text
+  description text [not null]
+  referenceSource text
+  tags text[] [not null]
+  pestelCategories PestelCategory[] [not null]
+  stakeholders text[] [not null]
+  impactLevel ImpactLevel [not null, default: "GLOBAL"]
+  timeHorizon TimeHorizon [not null, default: "H1"]
+  impactScore double [not null, default: 0]
+  status SignalStatus [not null, default: "DRAFT"]
+  totalVotes integer [not null, default: 0]
+  isGlobal boolean [not null, default: false]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, note: "Managed by Prisma @updatedAt"]
+  deletedAt timestamp [note: "Soft delete timestamp. Null means active."]
+  ownerId integer
+  workshopId integer
+
+  Note: "Foresight signal. Global signal bank records normally use workshopId = null and isGlobal = true."
+}
+
+Table SignalVote {
+  id integer [pk, increment]
+  score integer [not null]
+  signalId integer [not null]
+  userId integer [not null]
+  createdAt timestamp [not null, default: `now()`]
+
+  Indexes {
+    (signalId, userId) [unique, name: "SignalVote_signalId_userId_key"]
+  }
+
+  Note: "One vote per user per signal. Signal.impactScore and Signal.totalVotes are denormalized from these rows."
+}
+
+Table SignalHistory {
+  id integer [pk, increment]
+  action text [not null]
+  changes text
+  signalId integer [not null]
+  userId integer [not null]
+  createdAt timestamp [not null, default: `now()`]
+
+  Note: "Audit history for signal create, update, and delete actions."
+}
+
+Table ReferenceSource {
+  id integer [pk, increment]
+  title text [not null]
+  url text [not null]
+  signalId integer [not null]
+
+  Note: "External source or citation attached to a signal."
+}
+
+Table Workshop {
+  id integer [pk, increment]
+  name text [not null]
+  description text
+  horizon TimeHorizon [not null, default: "H1"]
+  isActive boolean [not null, default: true]
+  lastActive timestamp [not null, default: `now()`]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, note: "Managed by Prisma @updatedAt"]
+
+  Note: "Collaborative foresight workshop/session."
+}
+
+Table WorkshopParticipant {
+  id integer [pk, increment]
+  workshopId integer [not null]
+  userId integer [not null]
+
+  Indexes {
+    (workshopId, userId) [unique, name: "WorkshopParticipant_workshopId_userId_key"]
+  }
+
+  Note: "Membership join table between workshops and users."
+}
+
+Table WorkshopOutput {
+  id integer [pk, increment]
+  name text [not null]
+  type text [not null]
+  createdBy text [not null]
+  date timestamp [not null, default: `now()`]
+  workshopId integer [not null]
+
+  Note: "Workshop output/artifact. createdBy is stored as text, not a User FK."
+}
+
+Table Scenario {
+  id integer [pk, increment]
+  title text [not null]
+  description text [not null]
+  focus text
+  probability text
+  milestone text
+  keyDrivers text[] [not null]
+  imageUrl text
+  isSelected boolean [not null, default: false]
+  workshopId integer [not null]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, note: "Managed by Prisma @updatedAt"]
+
+  Note: "Scenario generated or created inside a workshop."
+}
+
+Table SwotAnalysis {
+  id integer [pk, increment]
+  strengths text[] [not null]
+  weaknesses text[] [not null]
+  opportunities text[] [not null]
+  threats text[] [not null]
+  scenarioId integer [not null, unique]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, note: "Managed by Prisma @updatedAt"]
+
+  Indexes {
+    scenarioId [unique, name: "SwotAnalysis_scenarioId_key"]
+  }
+
+  Note: "One SWOT analysis per scenario."
+}
+
+Table Notification {
+  id integer [pk, increment]
+  type NotificationType [not null]
+  title text [not null]
+  message text [not null]
+  href text
+  metadata jsonb
+  readAt timestamp
+  archivedAt timestamp
+  userId integer [not null, note: "Recipient user"]
+  actorId integer [note: "Optional user who triggered the notification"]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, note: "Managed by Prisma @updatedAt"]
+
+  Indexes {
+    (userId, readAt, archivedAt, createdAt) [name: "Notification_userId_readAt_archivedAt_createdAt_idx"]
+    (type, createdAt) [name: "Notification_type_createdAt_idx"]
+  }
+
+  Note: "In-app notification. actorId is nullable so notifications remain after actor deletion."
+}
+
+Table NotificationPreference {
+  id integer [pk, increment]
+  userId integer [not null, unique]
+  inAppEnabled boolean [not null, default: true]
+  emailEnabled boolean [not null, default: false]
+  dailySummary boolean [not null, default: true]
+  signalVotes boolean [not null, default: true]
+  signalNeedsVote boolean [not null, default: true]
+  workshopReminders boolean [not null, default: true]
+  scenarioUpdates boolean [not null, default: true]
+  swotUpdates boolean [not null, default: true]
+  systemAnnouncements boolean [not null, default: true]
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, note: "Managed by Prisma @updatedAt"]
+
+  Indexes {
+    userId [unique, name: "NotificationPreference_userId_key"]
+  }
+
+  Note: "Per-user notification settings."
+}
+
+Table _ScenarioSignals {
+  A integer [not null, note: "Scenario.id"]
+  B integer [not null, note: "Signal.id"]
+
+  Indexes {
+    (A, B) [pk, name: "_ScenarioSignals_AB_pkey"]
+    B [name: "_ScenarioSignals_B_index"]
+  }
+
+  Note: "Implicit Prisma many-to-many table for Scenario.signals <-> Signal.scenarios."
+}
+
+Ref: Signal.ownerId > User.id [delete: set null, update: cascade]
+Ref: Signal.workshopId > Workshop.id [delete: set null, update: cascade]
+
+Ref: SignalVote.signalId > Signal.id [delete: cascade, update: cascade]
+Ref: SignalVote.userId > User.id [delete: cascade, update: cascade]
+
+Ref: SignalHistory.signalId > Signal.id [delete: cascade, update: cascade]
+Ref: SignalHistory.userId > User.id [delete: restrict, update: cascade]
+
+Ref: ReferenceSource.signalId > Signal.id [delete: cascade, update: cascade]
+
+Ref: WorkshopParticipant.workshopId > Workshop.id [delete: cascade, update: cascade]
+Ref: WorkshopParticipant.userId > User.id [delete: cascade, update: cascade]
+
+Ref: WorkshopOutput.workshopId > Workshop.id [delete: cascade, update: cascade]
+
+Ref: Scenario.workshopId > Workshop.id [delete: cascade, update: cascade]
+
+Ref: Scenario.id - SwotAnalysis.scenarioId [delete: cascade, update: cascade]
+
+Ref: Notification.userId > User.id [delete: cascade, update: cascade]
+Ref: Notification.actorId > User.id [delete: set null, update: cascade]
+
+Ref: User.id - NotificationPreference.userId [delete: cascade, update: cascade]
+
+Ref: _ScenarioSignals.A > Scenario.id [delete: cascade, update: cascade]
+Ref: _ScenarioSignals.B > Signal.id [delete: cascade, update: cascade]
