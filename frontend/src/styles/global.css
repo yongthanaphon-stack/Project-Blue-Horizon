@@ -1430,11 +1430,67 @@ textarea.form-input {
   line-height: 1.5;
 }
 
+.swot-item-text {
+  min-width: 0;
+  flex: 1;
+}
+
 .swot-item-icon {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
   margin-top: 2px;
+}
+
+.swot-item-edit-btn,
+.swot-item-actions button {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--color-gray-500);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.swot-item-edit-btn:hover,
+.swot-item-actions button:hover {
+  border-color: var(--color-primary-400);
+  color: var(--color-primary-600);
+  background: white;
+}
+
+.swot-item-editing {
+  align-items: center;
+}
+
+.swot-item-editing input {
+  min-width: 0;
+  flex: 1;
+  min-height: 34px;
+  border: 1px solid var(--color-primary-300);
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: white;
+  color: var(--color-gray-800);
+  font: inherit;
+  outline: none;
+}
+
+.swot-item-editing input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(0, 71, 168, 0.1);
+}
+
+.swot-item-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .swot-add {
@@ -6501,7 +6557,21 @@ button.ws-new-btn {
   margin-top: auto;
   padding: 32px 0 8px;
   display: flex;
+  align-items: center;
+  gap: 14px;
   justify-content: center;
+}
+
+.swot-save-status {
+  min-width: 150px;
+  color: var(--color-success);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.swot-save-status.dirty {
+  color: var(--color-warning);
 }
 
 .swot-save-btn {

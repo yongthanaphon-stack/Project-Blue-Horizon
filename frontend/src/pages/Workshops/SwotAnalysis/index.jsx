@@ -1,20 +1,32 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { TrendingUp, TrendingDown, Lightbulb, AlertTriangle, CheckCircle2, XCircle, Plus, Sparkles } from 'lucide-react';
+import {
+  TrendingUp,
+  TrendingDown,
+  Lightbulb,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Plus,
+  Sparkles,
+  Pencil,
+  Check,
+  X,
+} from 'lucide-react';
 import { scenariosApi, swotApi, workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
+import { useAlert } from '../../../hooks/useAlert';
 import { useAuth } from '../../../hooks/useAuth';
 import { useSwotCollaboration, useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
-import { mockSwot } from '../../../mocks/mockData';
 import { createScenarioViewModel, getFocusClass } from '../scenarioData';
 
 const INITIAL_SCENARIO = createScenarioViewModel();
 const SWOT_KEYS = ['strengths', 'weaknesses', 'opportunities', 'threats'];
 
-function mergeItems(fallbackItems = [], sourceItems = []) {
-  return [...fallbackItems, ...sourceItems].filter((item, index, items) => (
-    item && items.indexOf(item) === index
-  ));
+function normalizeItems(items = []) {
+  return Array.isArray(items)
+    ? items.map(item => String(item).trim()).filter(Boolean)
+    : [];
 }
 
 function normalizeSwot(data) {
@@ -22,16 +34,14 @@ function normalizeSwot(data) {
 
   return SWOT_KEYS.reduce((normalized, key) => ({
     ...normalized,
-    [key]: mergeItems(
-      Array.isArray(mockSwot[key]) ? mockSwot[key] : [],
-      Array.isArray(source[key]) ? source[key] : [],
-    ),
+    [key]: normalizeItems(source[key]),
   }), {});
 }
 
 export default function SwotAnalysis() {
   const { workshopId, scenarioId } = useParams();
   const { user: currentUser } = useAuth();
+  const { showError, showSuccess } = useAlert();
   const typingStopTimerRef = useRef(null);
   const { users: liveSessionUsers } = useWorkshopSessionPresence(workshopId || 1);
   const {
@@ -43,6 +53,11 @@ export default function SwotAnalysis() {
   const [workshop, setWorkshop] = useState(null);
   const [scenario, setScenario] = useState(INITIAL_SCENARIO);
   const [swot, setSwot] = useState(() => normalizeSwot());
+  const [newItems, setNewItems] = useState({ strengths: '', weaknesses: '', opportunities: '', threats: '' });
+  const [editingItem, setEditingItem] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('');
   const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
@@ -78,10 +93,18 @@ export default function SwotAnalysis() {
     });
 
     swotApi.getByScenario(scenarioId || 1).then(res => {
-      if (isMounted) setSwot(normalizeSwot(res.data));
+      if (isMounted) {
+        setSwot(normalizeSwot(res.data));
+        setIsDirty(false);
+        setSaveStatus('');
+      }
     }).catch(err => {
       console.error(err);
-      if (isMounted) setSwot(normalizeSwot());
+      if (isMounted) {
+        setSwot(normalizeSwot());
+        setIsDirty(false);
+        setSaveStatus('');
+      }
     });
 
     return () => {
@@ -93,7 +116,6 @@ export default function SwotAnalysis() {
     window.clearTimeout(typingStopTimerRef.current);
   }, []);
 
-  const [newItems, setNewItems] = useState({ strengths: '', weaknesses: '', opportunities: '', threats: '' });
   const focusClass = getFocusClass(scenario.focus);
   const scenarioDrivers = scenario.keyDrivers || [];
   const swotItems = normalizeSwot(swot);
@@ -156,18 +178,90 @@ export default function SwotAnalysis() {
 
     setSwot(nextSwot);
     setNewItems(prev => ({ ...prev, [quadrant]: '' }));
+    setIsDirty(true);
+    setSaveStatus('Unsaved changes');
     clearTypingStopTimer();
     stopActivity();
+  }
 
-    swotApi.update(scenarioId || 1, nextSwot).catch(() => { });
+  function startEditItem(quadrant, index, value) {
+    clearTypingStopTimer();
+    setEditingItem({ quadrant, index, value });
+    startActivity({ quadrant, itemIndex: index, mode: 'editing' });
+  }
+
+  function updateEditingItem(value) {
+    if (!editingItem) return;
+
+    setEditingItem(prev => ({ ...prev, value }));
+    startActivity({
+      quadrant: editingItem.quadrant,
+      itemIndex: editingItem.index,
+      mode: 'typing',
+    });
+    scheduleActivityStop();
+  }
+
+  function getSwotWithEditedItem(sourceSwot = swotItems) {
+    if (!editingItem) return sourceSwot;
+
+    const text = editingItem.value.trim();
+    if (!text) return null;
+
+    return {
+      ...sourceSwot,
+      [editingItem.quadrant]: sourceSwot[editingItem.quadrant].map((item, index) =>
+        index === editingItem.index ? text : item
+      ),
+    };
+  }
+
+  function saveEditedItem() {
+    const nextSwot = getSwotWithEditedItem();
+    if (!nextSwot) {
+      showError('SWOT item cannot be empty.');
+      return;
+    }
+
+    setSwot(nextSwot);
+    setEditingItem(null);
+    setIsDirty(true);
+    setSaveStatus('Unsaved changes');
+    clearTypingStopTimer();
+    stopActivity();
+  }
+
+  function cancelEditItem() {
+    setEditingItem(null);
+    clearTypingStopTimer();
+    stopActivity();
   }
 
   async function handleSave() {
+    const payload = getSwotWithEditedItem();
+    if (!payload) {
+      showError('SWOT item cannot be empty.');
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveStatus('Saving...');
+
     try {
-      await swotApi.update(scenarioId || 1, swotItems);
-      alert('SWOT Analysis saved!');
-    } catch {
-      alert('Failed to save SWOT Analysis.');
+      const response = await swotApi.update(scenarioId || 1, payload);
+      setSwot(normalizeSwot(response.data || payload));
+      setEditingItem(null);
+      setIsDirty(false);
+      setSaveStatus('Discussion output ready');
+      clearTypingStopTimer();
+      stopActivity();
+      showSuccess('SWOT analysis saved. Discussion output is ready.');
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Failed to save SWOT Analysis.';
+      setSaveStatus('Save failed');
+      showError(message);
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -302,12 +396,52 @@ export default function SwotAnalysis() {
                 </div>
               )}
 
-              {swotItems[q.key].map((item, i) => (
-                <div key={i} className="swot-item">
-                  <q.itemIcon size={16} className="swot-item-icon" style={{ color: q.color }} />
-                  <span>{item}</span>
-                </div>
-              ))}
+              {swotItems[q.key].map((item, i) => {
+                const isEditing = editingItem?.quadrant === q.key && editingItem?.index === i;
+
+                if (isEditing) {
+                  return (
+                    <div key={`${q.key}-${i}`} className="swot-item swot-item-editing">
+                      <q.itemIcon size={16} className="swot-item-icon" style={{ color: q.color }} />
+                      <input
+                        value={editingItem.value}
+                        onChange={event => updateEditingItem(event.target.value)}
+                        onFocus={() => startActivity({ quadrant: q.key, itemIndex: i, mode: 'editing' })}
+                        onBlur={scheduleActivityStop}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') saveEditedItem();
+                          if (event.key === 'Escape') cancelEditItem();
+                        }}
+                        aria-label={`Edit ${q.title} item`}
+                        autoFocus
+                      />
+                      <div className="swot-item-actions">
+                        <button type="button" onClick={saveEditedItem} aria-label="Save item edit">
+                          <Check size={15} />
+                        </button>
+                        <button type="button" onClick={cancelEditItem} aria-label="Cancel item edit">
+                          <X size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={`${q.key}-${i}`} className="swot-item">
+                    <q.itemIcon size={16} className="swot-item-icon" style={{ color: q.color }} />
+                    <span className="swot-item-text">{item}</span>
+                    <button
+                      type="button"
+                      className="swot-item-edit-btn"
+                      onClick={() => startEditItem(q.key, i, item)}
+                      aria-label={`Edit ${q.title} item`}
+                    >
+                      <Pencil size={14} />
+                    </button>
+                  </div>
+                );
+              })}
               <div className="swot-add">
                 <div style={{ position: 'relative', flex: 1 }}>
                   <input
@@ -341,12 +475,18 @@ export default function SwotAnalysis() {
 
       {/* Save Button */}
       <div className="swot-save-footer">
+        {saveStatus && (
+          <span className={`swot-save-status ${isDirty ? 'dirty' : ''}`} aria-live="polite">
+            {saveStatus}
+          </span>
+        )}
         <button
           className="btn btn-primary swot-save-btn"
           onClick={handleSave}
           id="save-swot-btn"
+          disabled={isSaving}
         >
-          Save
+          {isSaving ? 'Saving...' : 'Save'}
         </button>
       </div>
     </div>

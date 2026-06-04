@@ -1,7 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { AuthenticatedUser } from '../auth/jwt.guard';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SwotQuadrant, UpsertSwotDto } from './dto/swot.dto';
+
+type ScenarioForSwot = {
+  id: number;
+  isSelected: boolean;
+  title: string;
+  workshopId: number;
+  workshop: {
+    participants: Array<{ id: number }>;
+  };
+};
+
+const SWOT_OUTPUT_TYPE = 'SWOT Analysis';
 
 @Injectable()
 export class SwotService {
@@ -10,14 +27,21 @@ export class SwotService {
     private notifications: NotificationsService,
   ) {}
 
-  async findByScenario(scenarioId: number) {
+  async findByScenario(scenarioId: number, user: AuthenticatedUser) {
+    await this.ensureScenarioAccess(scenarioId, user);
+
     return this.prisma.swotAnalysis.findUnique({
       where: { scenarioId },
       include: { scenario: true },
     });
   }
 
-  async upsert(scenarioId: number, data: UpsertSwotDto, actorId?: number) {
+  async upsert(
+    scenarioId: number,
+    data: UpsertSwotDto,
+    actor: AuthenticatedUser,
+  ) {
+    const scenario = await this.ensureScenarioAccess(scenarioId, actor);
     const swot = await this.prisma.swotAnalysis.upsert({
       where: { scenarioId },
       create: {
@@ -35,7 +59,8 @@ export class SwotService {
       },
     });
 
-    await this.notifications.notifySwotUpdated(scenarioId, actorId);
+    await this.createOrUpdateDiscussionOutput(scenario, actor);
+    await this.notifications.notifySwotUpdated(scenarioId, actor.id);
 
     return swot;
   }
@@ -44,8 +69,9 @@ export class SwotService {
     scenarioId: number,
     quadrant: SwotQuadrant,
     item: string,
-    actorId?: number,
+    actor: AuthenticatedUser,
   ) {
+    const scenario = await this.ensureScenarioAccess(scenarioId, actor);
     const swot = await this.prisma.swotAnalysis.findUnique({
       where: { scenarioId },
     });
@@ -61,7 +87,8 @@ export class SwotService {
         },
       });
 
-      await this.notifications.notifySwotUpdated(scenarioId, actorId);
+      await this.createOrUpdateDiscussionOutput(scenario, actor);
+      await this.notifications.notifySwotUpdated(scenarioId, actor.id);
 
       return createdSwot;
     }
@@ -72,8 +99,90 @@ export class SwotService {
       data: { [quadrant]: [...currentItems, item] },
     });
 
-    await this.notifications.notifySwotUpdated(scenarioId, actorId);
+    await this.createOrUpdateDiscussionOutput(scenario, actor);
+    await this.notifications.notifySwotUpdated(scenarioId, actor.id);
 
     return updatedSwot;
+  }
+
+  private async ensureScenarioAccess(
+    scenarioId: number,
+    user: AuthenticatedUser,
+  ): Promise<ScenarioForSwot> {
+    const scenario = await this.prisma.scenario.findUnique({
+      where: { id: scenarioId },
+      select: {
+        id: true,
+        isSelected: true,
+        title: true,
+        workshopId: true,
+        workshop: {
+          select: {
+            participants: {
+              where: { userId: user.id },
+              select: { id: true },
+              take: 1,
+            },
+          },
+        },
+      },
+    });
+
+    if (!scenario) {
+      throw new NotFoundException('Scenario not found.');
+    }
+
+    if (!this.isAdminRole(user.role) && !scenario.workshop.participants.length) {
+      throw new ForbiddenException(
+        'You do not have access to this workshop session.',
+      );
+    }
+
+    if (!scenario.isSelected) {
+      throw new ForbiddenException(
+        'Save this scenario selection before starting SWOT analysis.',
+      );
+    }
+
+    return scenario;
+  }
+
+  private async createOrUpdateDiscussionOutput(
+    scenario: ScenarioForSwot,
+    actor: AuthenticatedUser,
+  ) {
+    const outputName = `SWOT discussion brief: ${scenario.title}`;
+    const createdBy = actor.name || actor.email || 'Blue Horizon';
+    const existingOutput = await this.prisma.workshopOutput.findFirst({
+      where: {
+        name: outputName,
+        type: SWOT_OUTPUT_TYPE,
+        workshopId: scenario.workshopId,
+      },
+      select: { id: true },
+    });
+
+    if (existingOutput) {
+      return this.prisma.workshopOutput.update({
+        where: { id: existingOutput.id },
+        data: {
+          createdBy,
+          date: new Date(),
+        },
+      });
+    }
+
+    return this.prisma.workshopOutput.create({
+      data: {
+        name: outputName,
+        type: SWOT_OUTPUT_TYPE,
+        createdBy,
+        workshopId: scenario.workshopId,
+      },
+    });
+  }
+
+  private isAdminRole(role?: string | null) {
+    return role === 'ADMIN' || role === 'ADMIN_SYSTEM';
   }
 }

@@ -19,8 +19,11 @@ export class SwotController {
   constructor(private readonly swotService: SwotService) {}
 
   @Get(':scenarioId')
-  findByScenario(@Param('scenarioId', ParseIntPipe) scenarioId: number) {
-    return this.swotService.findByScenario(scenarioId);
+  findByScenario(
+    @Param('scenarioId', ParseIntPipe) scenarioId: number,
+    @Request() req: AuthenticatedRequest,
+  ) {
+    return this.swotService.findByScenario(scenarioId, req.user);
   }
 
   @Put(':scenarioId')
@@ -29,7 +32,7 @@ export class SwotController {
     @Body() data: UpsertSwotDto,
     @Request() req: AuthenticatedRequest,
   ) {
-    return this.swotService.upsert(scenarioId, data, req.user.id);
+    return this.swotService.upsert(scenarioId, data, req.user);
   }
 
   @Post(':scenarioId/item')
@@ -42,7 +45,7 @@ export class SwotController {
       scenarioId,
       data.quadrant,
       data.item,
-      req.user.id,
+      req.user,
     );
   }
 }
