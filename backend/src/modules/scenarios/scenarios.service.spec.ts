@@ -318,6 +318,40 @@ describe('ScenariosService AI generation', () => {
     );
   });
 
+  it('keeps the AI prompt domain-adaptive instead of forcing higher education context', async () => {
+    const { service, aiCreate } = createService({
+      workshop: {
+        id: 7,
+        name: 'อนาคตการเดินทางในเมืองขอนแก่น 2035',
+        description:
+          'สร้างฉากทัศน์สำหรับระบบขนส่งสาธารณะและการพัฒนาเมืองคาร์บอนต่ำ',
+        horizon: 'H3',
+        scenarios: [],
+        signals: [
+          {
+            name: 'Electric buses',
+            shortDetails: 'Cities accelerate zero-emission bus procurement.',
+            description:
+              'Electric bus fleets become more affordable for regional cities.',
+          },
+        ],
+      },
+    });
+
+    await service.generateScenarioFromAI(7, 9);
+
+    const prompt = aiCreate.mock.calls[0][0].messages[0].content as string;
+    expect(prompt).toContain(
+      'ห้ามสมมติว่า Workshop เกี่ยวข้องกับมหาวิทยาลัย การศึกษา หรือสถาบันอุดมศึกษา',
+    );
+    expect(prompt).toContain(
+      'ให้ระบุบริบทหลักจากชื่อ Workshop, รายละเอียด Workshop และสัญญาณเท่านั้น',
+    );
+    expect(prompt).not.toContain(
+      'เพื่อสร้าง Future Scenarios สำหรับสถาบันอุดมศึกษาในประเทศไทยและภูมิภาคอาเซียน',
+    );
+  });
+
   it('retries once when AI returns an existing scenario title', async () => {
     const { service, prisma, aiCreate } = createService({
       workshop: {
@@ -424,6 +458,47 @@ describe('ScenariosService AI generation', () => {
           }),
         ],
       }),
+    );
+  });
+
+  it('uses workshop context, workshop signals, and radar-selected signals together', async () => {
+    const { service, aiCreate } = createService({
+      workshop: {
+        id: 7,
+        name: 'อนาคตระบบอาหารเมืองเชียงใหม่',
+        description:
+          'สร้างฉากทัศน์สำหรับความมั่นคงทางอาหารและเศรษฐกิจท้องถิ่น',
+        horizon: 'H2',
+        scenarios: [],
+        signals: [
+          {
+            name: 'Urban farming cooperatives',
+            shortDetails: 'Local food networks expand across districts.',
+            description:
+              'Community farms and cooperative logistics reduce food risk.',
+          },
+        ],
+      },
+    });
+
+    await service.generateScenarioFromAI(7, 9, [
+      {
+        id: 'radar-climate-supply',
+        name: 'Radar Climate Supply Shock',
+        description: 'Extreme weather disrupts regional food distribution.',
+        category: 'ENVIRONMENTAL',
+        horizon: 'H2 (3-5 Years)',
+      },
+    ]);
+
+    const prompt = aiCreate.mock.calls[0][0].messages[0].content as string;
+    expect(prompt).toContain('อนาคตระบบอาหารเมืองเชียงใหม่');
+    expect(prompt).toContain('สัญญาณของ Workshop');
+    expect(prompt).toContain('Urban farming cooperatives');
+    expect(prompt).toContain('สัญญาณที่เลือกจากเรดาร์การสแกนสภาพแวดล้อม');
+    expect(prompt).toContain('Radar Climate Supply Shock');
+    expect(prompt).toContain(
+      'ต้องสังเคราะห์ฉากทัศน์จากหัวข้อ Workshop, สัญญาณของ Workshop และสัญญาณที่เลือกจากเรดาร์ร่วมกัน',
     );
   });
 });

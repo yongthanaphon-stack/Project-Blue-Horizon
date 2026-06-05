@@ -185,7 +185,15 @@ export class ScenariosService {
       const selectedRadarSignals = radarSignals.filter(
         (signal) => signal.name?.trim() && signal.description?.trim(),
       );
-      const inputSignalsContext = selectedRadarSignals.length
+      const workshopSignalsContext = workshop.signals.length
+        ? workshop.signals
+            .map(
+              (s) =>
+                `- ${s.name}: รายละเอียด: ${s.shortDetails || s.description}`,
+            )
+            .join('\n')
+        : 'ยังไม่มีสัญญาณของ Workshop';
+      const selectedRadarSignalsContext = selectedRadarSignals.length
         ? selectedRadarSignals
             .map((signal) => {
               const details = [
@@ -201,15 +209,7 @@ export class ScenariosService {
               return `- ${signal.name}: ${details.join(' | ')}`;
             })
             .join('\n')
-        : workshop.signals
-            .map(
-              (s) =>
-                `- ${s.name}: รายละเอียด: ${s.shortDetails || s.description}`,
-            )
-            .join('\n');
-      const inputSignalSourceLabel = selectedRadarSignals.length
-        ? 'สัญญาณที่เลือกจากเรดาร์การสแกนสภาพแวดล้อม'
-        : 'สัญญาณของ Workshop';
+        : 'ยังไม่มีสัญญาณที่เลือกจากเรดาร์';
       const existingScenarios = workshop.scenarios.map((scenario) => ({
         title: scenario.title,
         description: scenario.description,
@@ -238,24 +238,42 @@ export class ScenariosService {
 
       const buildPrompt = (duplicateTitle?: string) => `
         คำสั่งระบบ =
-        คุณคือผู้เชี่ยวชาญด้าน Strategic Foresight ระดับโลก ที่เชี่ยวชาญการวิเคราะห์ Signals of Change เพื่อสร้าง Future Scenarios สำหรับสถาบันอุดมศึกษาในประเทศไทยและภูมิภาคอาเซียน
+        คุณคือผู้เชี่ยวชาญด้านการมองอนาคตเชิงกลยุทธ์และการวางแผนฉากทัศน์ ที่เชี่ยวชาญการวิเคราะห์สัญญาณการเปลี่ยนแปลง เพื่อสร้างฉากทัศน์อนาคตให้สอดคล้องกับบริบท เป้าหมาย อุตสาหกรรม องค์กร พื้นที่ หรือประเด็นหลักของ Workshop ที่กำหนด
+
+        ห้ามสมมติว่า Workshop เกี่ยวข้องกับมหาวิทยาลัย การศึกษา หรือสถาบันอุดมศึกษา เว้นแต่ชื่อ Workshop รายละเอียด Workshop หรือสัญญาณที่เลือก ระบุบริบทนั้นอย่างชัดเจน
 
         ภูมิหลัง:
-        - ใช้กรอบ PESTEL, Horizon Scanning และ Scenario Planning
+        - ใช้กรอบ PESTEL, การสแกนอนาคต และการวางแผนฉากทัศน์
         - มุ่งเน้นผลกระทบตามกรอบเวลาของ Workshop
         - ให้ข้อมูลเชิงกลยุทธ์ที่นำไปปฏิบัติได้จริง
 
         หัวข้อและเป้าหมายของ Workshop (ต้องยึดเป็นกรอบหลัก):
         ${workshopContext}
 
+        กฎการตีความบริบท:
+        - ให้ระบุบริบทหลักจากชื่อ Workshop, รายละเอียด Workshop และสัญญาณเท่านั้น
+        - ถ้า Workshop เป็นเรื่องธุรกิจ นโยบาย เมือง สิ่งแวดล้อม เทคโนโลยี สุขภาพ หรือบริบทอื่น ให้สร้างฉากทัศน์ตามบริบทนั้น
+        - ห้ามดึงบริบทมหาวิทยาลัย การศึกษา หรืออุดมศึกษาเข้ามาเอง
+        - บริบทของ Workshop ต้องสำคัญกว่าแม่แบบความรู้ทั่วไปของ AI
+
         กฎการยึดหัวข้อ Workshop:
         - Scenario ที่สร้างต้องตอบโจทย์ชื่อและรายละเอียดของ Workshop เป็นอันดับแรก
         - ทุก title, description, milestone, probability, focus และ keyDrivers ต้องเชื่อมโยงกับหัวข้อ Workshop อย่างชัดเจน
-        - ห้ามสร้าง Scenario ทั่วไปที่อ้างอิงเฉพาะ signals แต่ไม่สัมพันธ์กับหัวข้อ Workshop
+        - ห้ามสร้าง Scenario ทั่วไปที่อ้างอิงเฉพาะสัญญาณ แต่ไม่สัมพันธ์กับหัวข้อ Workshop
         - หากสัญญาณมีความหมายกว้าง ให้ตีความสัญญาณผ่านบริบทของ Workshop เท่านั้น
 
-        ${inputSignalSourceLabel}:
-        ${inputSignalsContext}
+        กฎการใช้ข้อมูลทั้งสามส่วน:
+        - ต้องสังเคราะห์ฉากทัศน์จากหัวข้อ Workshop, สัญญาณของ Workshop และสัญญาณที่เลือกจากเรดาร์ร่วมกัน
+        - ใช้หัวข้อและเป้าหมาย Workshop เป็นกรอบหลักในการตีความสัญญาณทุกชุด
+        - ใช้สัญญาณของ Workshop เป็นฐานบริบทของพื้นที่ปัญหาและผู้มีส่วนเกี่ยวข้อง
+        - ใช้สัญญาณที่เลือกจากเรดาร์เป็นหลักฐานหรือแรงขับเคลื่อนเพิ่มเติม หากไม่มีให้สร้างจากหัวข้อ Workshop และสัญญาณของ Workshop เท่านั้น
+        - ห้ามใช้สัญญาณชุดใดชุดหนึ่งจนทำให้คำตอบหลุดจากบริบท Workshop
+
+        สัญญาณของ Workshop:
+        ${workshopSignalsContext}
+
+        สัญญาณที่เลือกจากเรดาร์การสแกนสภาพแวดล้อม:
+        ${selectedRadarSignalsContext}
 
         Scenario เดิมที่ต้องหลีกเลี่ยงการซ้ำหรือคล้ายกับ Scenario ใหม่ที่คุณจะสร้าง:
         ${existingScenariosContext}
