@@ -3881,7 +3881,57 @@ a.signal-bank-add-btn.btn-primary:hover {
 }
 
 .workshop-signal-open {
+  min-height: 42px;
+  padding: 0 15px 0 10px;
+  border: 1px solid #0f4aa5;
+  border-radius: 12px;
+  background: #0f4aa5;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 900;
+  box-shadow: 0 12px 22px rgba(15, 74, 165, 0.22);
   white-space: nowrap;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.workshop-signal-open:hover {
+  border-color: #0f4aa5;
+  background: #ffffff;
+  color: #0f4aa5;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(15, 74, 165, 0.16);
+}
+
+.workshop-signal-open:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 16px rgba(15, 74, 165, 0.2);
+}
+
+.workshop-signal-open-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.workshop-signal-open:hover .workshop-signal-open-icon {
+  background: #eef5ff;
+  color: #0f4aa5;
+}
+
+.workshop-signal-open svg {
+  flex: 0 0 auto;
 }
 
 .workshop-signal-candidate-preview,

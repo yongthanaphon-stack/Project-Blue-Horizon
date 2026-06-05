@@ -537,7 +537,9 @@ export default function NewWorkshop() {
                 className="btn btn-outline workshop-signal-open"
                 onClick={() => setSignalPickerOpen(true)}
               >
-                <Database size={17} />
+                <span className="workshop-signal-open-icon">
+                  <Database size={16} />
+                </span>
                 Add from Signal Bank
               </button>
             </div>
