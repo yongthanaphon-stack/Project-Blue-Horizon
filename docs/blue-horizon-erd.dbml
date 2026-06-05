@@ -142,6 +142,43 @@ Table Workshop {
   Note: "Collaborative foresight workshop/session."
 }
 
+Table WorkshopSignalCandidate {
+  id integer [pk, increment]
+  workshopId integer [not null]
+  signalId integer [not null]
+  addedById integer
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, note: "Managed by Prisma @updatedAt"]
+
+  Indexes {
+    (workshopId, signalId) [unique, name: "WorkshopSignalCandidate_workshopId_signalId_key"]
+    (workshopId, createdAt) [name: "WorkshopSignalCandidate_workshopId_createdAt_idx"]
+    signalId [name: "WorkshopSignalCandidate_signalId_idx"]
+  }
+
+  Note: "Signals prepared for a workshop's Signal Selection pool before they are placed on the radar."
+}
+
+Table WorkshopSignalSelection {
+  id integer [pk, increment]
+  workshopId integer [not null]
+  signalId integer [not null]
+  category PestelCategory [not null]
+  horizon TimeHorizon [not null]
+  placement jsonb [not null]
+  addedById integer
+  createdAt timestamp [not null, default: `now()`]
+  updatedAt timestamp [not null, note: "Managed by Prisma @updatedAt"]
+
+  Indexes {
+    (workshopId, signalId) [unique, name: "WorkshopSignalSelection_workshopId_signalId_key"]
+    (workshopId, updatedAt) [name: "WorkshopSignalSelection_workshopId_updatedAt_idx"]
+    signalId [name: "WorkshopSignalSelection_signalId_idx"]
+  }
+
+  Note: "Signals selected from the workshop candidate pool and placed on the Environmental Scanning radar. placement stores radar coordinates/options."
+}
+
 Table WorkshopParticipant {
   id integer [pk, increment]
   workshopId integer [not null]
@@ -265,6 +302,14 @@ Ref: SignalHistory.signalId > Signal.id [delete: cascade, update: cascade]
 Ref: SignalHistory.userId > User.id [delete: restrict, update: cascade]
 
 Ref: ReferenceSource.signalId > Signal.id [delete: cascade, update: cascade]
+
+Ref: WorkshopSignalCandidate.workshopId > Workshop.id [delete: cascade, update: cascade]
+Ref: WorkshopSignalCandidate.signalId > Signal.id [delete: cascade, update: cascade]
+Ref: WorkshopSignalCandidate.addedById > User.id [delete: set null, update: cascade]
+
+Ref: WorkshopSignalSelection.workshopId > Workshop.id [delete: cascade, update: cascade]
+Ref: WorkshopSignalSelection.signalId > Signal.id [delete: cascade, update: cascade]
+Ref: WorkshopSignalSelection.addedById > User.id [delete: set null, update: cascade]
 
 Ref: WorkshopParticipant.workshopId > Workshop.id [delete: cascade, update: cascade]
 Ref: WorkshopParticipant.userId > User.id [delete: cascade, update: cascade]
