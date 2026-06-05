@@ -1,5 +1,12 @@
-import { IsArray, IsEnum, IsInt, IsOptional, IsString } from 'class-validator';
-import { TimeHorizon } from '@prisma/client';
+import {
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsObject,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { PestelCategory, TimeHorizon } from '@prisma/client';
 
 export class CreateWorkshopDto {
   @IsString()
@@ -17,4 +24,15 @@ export class CreateWorkshopDto {
   @IsArray()
   @IsInt({ each: true })
   participantIds?: number[];
+}
+
+export class UpsertWorkshopSignalSelectionDto {
+  @IsEnum(PestelCategory)
+  category!: PestelCategory;
+
+  @IsEnum(TimeHorizon)
+  horizon!: TimeHorizon;
+
+  @IsObject()
+  placement!: Record<string, unknown>;
 }

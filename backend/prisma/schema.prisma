@@ -53,50 +53,52 @@ enum NotificationType {
 }
 
 model User {
-  id                     Int                   @id @default(autoincrement())
-  name                   String
-  email                  String                @unique
-  passwordHash           String                @default("")
-  role                   UserRole              @default(ANALYST)
-  avatar                 String?
-  preferredFont          String                @default("google-sans-flex")
-  createdAt              DateTime              @default(now())
-  updatedAt              DateTime              @updatedAt
-  votes                  SignalVote[]
-  workshopParticipations WorkshopParticipant[]
-  ownedSignals           Signal[]              @relation("SignalOwner")
-  signalHistories        SignalHistory[]
-  notifications           Notification[]        @relation("NotificationRecipient")
-  notificationsAuthored   Notification[]        @relation("NotificationActor")
-  notificationPreference  NotificationPreference?
+  id                       Int                       @id @default(autoincrement())
+  name                     String
+  email                    String                    @unique
+  passwordHash             String                    @default("")
+  role                     UserRole                  @default(ANALYST)
+  avatar                   String?
+  preferredFont            String                    @default("google-sans-flex")
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  votes                    SignalVote[]
+  workshopParticipations   WorkshopParticipant[]
+  workshopSignalSelections WorkshopSignalSelection[] @relation("WorkshopSignalSelectionActor")
+  ownedSignals             Signal[]                  @relation("SignalOwner")
+  signalHistories          SignalHistory[]
+  notifications            Notification[]            @relation("NotificationRecipient")
+  notificationsAuthored    Notification[]            @relation("NotificationActor")
+  notificationPreference   NotificationPreference?
 }
 
 model Signal {
-  id               Int               @id @default(autoincrement())
-  name             String
-  shortDetails     String?
-  description      String
-  referenceSource  String?
-  tags             String[]
-  pestelCategories PestelCategory[]
-  stakeholders     String[]
-  impactLevel      ImpactLevel       @default(GLOBAL)
-  timeHorizon      TimeHorizon       @default(H1)
-  impactScore      Float             @default(0)
-  status           SignalStatus      @default(DRAFT)
-  totalVotes       Int               @default(0)
-  isGlobal         Boolean           @default(false)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  deletedAt        DateTime?
-  ownerId          Int?
-  owner            User?             @relation("SignalOwner", fields: [ownerId], references: [id])
-  workshopId       Int?
-  workshop         Workshop?         @relation("WorkshopSignals", fields: [workshopId], references: [id])
-  votes            SignalVote[]
-  references       ReferenceSource[]
-  scenarios        Scenario[]        @relation("ScenarioSignals")
-  histories        SignalHistory[]
+  id                 Int                       @id @default(autoincrement())
+  name               String
+  shortDetails       String?
+  description        String
+  referenceSource    String?
+  tags               String[]
+  pestelCategories   PestelCategory[]
+  stakeholders       String[]
+  impactLevel        ImpactLevel               @default(GLOBAL)
+  timeHorizon        TimeHorizon               @default(H1)
+  impactScore        Float                     @default(0)
+  status             SignalStatus              @default(DRAFT)
+  totalVotes         Int                       @default(0)
+  isGlobal           Boolean                   @default(false)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  deletedAt          DateTime?
+  ownerId            Int?
+  owner              User?                     @relation("SignalOwner", fields: [ownerId], references: [id])
+  workshopId         Int?
+  workshop           Workshop?                 @relation("WorkshopSignals", fields: [workshopId], references: [id])
+  votes              SignalVote[]
+  references         ReferenceSource[]
+  scenarios          Scenario[]                @relation("ScenarioSignals")
+  histories          SignalHistory[]
+  workshopSelections WorkshopSignalSelection[]
 }
 
 model SignalVote {
@@ -131,18 +133,38 @@ model ReferenceSource {
 }
 
 model Workshop {
-  id           Int                   @id @default(autoincrement())
-  name         String
-  description  String?
-  horizon      TimeHorizon           @default(H1)
-  isActive     Boolean               @default(true)
-  lastActive   DateTime              @default(now())
-  createdAt    DateTime              @default(now())
-  updatedAt    DateTime              @updatedAt
-  participants WorkshopParticipant[]
-  scenarios    Scenario[]
-  outputs      WorkshopOutput[]
-  signals      Signal[]              @relation("WorkshopSignals")
+  id               Int                       @id @default(autoincrement())
+  name             String
+  description      String?
+  horizon          TimeHorizon               @default(H1)
+  isActive         Boolean                   @default(true)
+  lastActive       DateTime                  @default(now())
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  participants     WorkshopParticipant[]
+  scenarios        Scenario[]
+  outputs          WorkshopOutput[]
+  signals          Signal[]                  @relation("WorkshopSignals")
+  signalSelections WorkshopSignalSelection[]
+}
+
+model WorkshopSignalSelection {
+  id         Int            @id @default(autoincrement())
+  workshopId Int
+  signalId   Int
+  category   PestelCategory
+  horizon    TimeHorizon
+  placement  Json
+  addedById  Int?
+  workshop   Workshop       @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  signal     Signal         @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  addedBy    User?          @relation("WorkshopSignalSelectionActor", fields: [addedById], references: [id], onDelete: SetNull)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([workshopId, signalId])
+  @@index([workshopId, updatedAt])
+  @@index([signalId])
 }
 
 model WorkshopParticipant {

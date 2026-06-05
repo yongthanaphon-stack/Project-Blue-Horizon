@@ -81,6 +81,11 @@ export const signalsApi = {
 export const workshopsApi = {
   getAll: () => api.get('/workshops'),
   getById: (id) => api.get(`/workshops/${id}`),
+  getSignalSelection: (id) => api.get(`/workshops/${id}/signal-selection`),
+  upsertSignalSelection: (id, signalId, data) =>
+    api.put(`/workshops/${id}/signal-selection/${signalId}`, data),
+  removeSignalSelection: (id, signalId) =>
+    api.delete(`/workshops/${id}/signal-selection/${signalId}`),
   create: (data) => api.post('/workshops', data),
 };
 

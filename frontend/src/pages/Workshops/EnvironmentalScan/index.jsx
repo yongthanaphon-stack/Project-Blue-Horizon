@@ -5,7 +5,6 @@ import { workshopsApi } from '../../../api/api';
 import WorkshopAvatarStack from '../../../components/WorkshopAvatarStack';
 import { useRadarCollaboration, useWorkshopSessionPresence } from '../../../hooks/useRealtimePresence';
 import {
-  readRadarSignalsFromStorage,
   saveRadarSignalsToStorage,
 } from '../radarStorage';
 
@@ -19,7 +18,6 @@ const CATEGORY_AXIS = {
   POLITICAL: 0,
   ECONOMIC: 1,
   SOCIAL: 2,
-  TECHNOLOGY: 3,
   TECHNOLOGICAL: 3,
   TECH: 3,
   ENVIRONMENTAL: 4,
@@ -30,7 +28,7 @@ const PESTEL_OPTIONS = [
   { value: 'POLITICAL', label: 'Political' },
   { value: 'ECONOMIC', label: 'Economic' },
   { value: 'SOCIAL', label: 'Social' },
-  { value: 'TECHNOLOGY', label: 'Technological' },
+  { value: 'TECHNOLOGICAL', label: 'Technological' },
   { value: 'ENVIRONMENTAL', label: 'Environmental' },
   { value: 'LEGAL', label: 'Legal' },
 ];
@@ -59,78 +57,6 @@ const HORIZON_DETAILS = {
   H3: 'Long Term',
 };
 
-const PROTOTYPE_SIGNALS = [
-  {
-    id: 'graphene',
-    name: 'Graphene-based Supercapacitors',
-    description: 'Breakthrough in energy density and charge speeds.',
-    category: 'TECHNOLOGY',
-    dotColor: 'high',
-    dotCount: 3,
-    placement: { axisIndex: 3, radius: 150, angleOffset: 10 },
-    horizon: 'H2 (3-5 Years)',
-  },
-  {
-    id: 'peer',
-    name: 'Peer-to-Peer Energy Trading',
-    description: 'Localized microgrids bypass traditional utilities.',
-    category: 'ECONOMIC',
-    dotColor: 'medium',
-    dotCount: 2,
-    placement: { axisIndex: 1, radius: 95, angleOffset: -10 },
-    horizon: 'H3 (5-7 Years)',
-    impactScore: 8.4,
-    creationDate: 'Jan 12, 2024',
-    horizonDetail: 'Medium Term',
-    impactLevel: 'Regional',
-  },
-  {
-    id: 'ocean',
-    name: 'Ocean Thermal Conversion',
-    description: 'Harnessing temperature gradients for baseload power.',
-    category: 'ENVIRONMENTAL',
-    dotColor: 'low',
-    dotCount: 1,
-    placement: { axisIndex: 3, radius: 200, angleOffset: -10 },
-    horizon: 'H3 (5-7 Years)',
-  },
-  {
-    id: 'dao',
-    name: 'Decentralized Autonomous Power Co-ops',
-    description: 'Community-owned energy systems via DAO governance.',
-    category: 'SOCIAL',
-    dotColor: 'high',
-    dotCount: 2,
-    placement: { axisIndex: 3, radius: 150, angleOffset: 10 },
-  },
-  {
-    id: 'ai-advising',
-    name: 'AI Student Advising Assistants',
-    description: 'Personalized support systems for course planning and student services.',
-    category: 'TECHNOLOGY',
-    dotColor: 'medium',
-    dotCount: 2,
-    horizon: 'H1 (0-2 Years)',
-    impactScore: 7.6,
-    creationDate: 'Feb 5, 2024',
-    horizonDetail: 'Near Term',
-    impactLevel: 'Institutional',
-  },
-  {
-    id: 'climate-campus',
-    name: 'Climate-Resilient Campus Planning',
-    description: 'Long-term infrastructure planning for heat, flooding, and resource pressure.',
-    category: 'ENVIRONMENTAL',
-    dotColor: 'high',
-    dotCount: 3,
-    horizon: 'H3 (5-7 Years)',
-    impactScore: 8.8,
-    creationDate: 'Feb 18, 2024',
-    horizonDetail: 'Long Term',
-    impactLevel: 'Regional',
-  },
-];
-
 const PARTICIPANTS = ['analyst-a', 'analyst-b', 'analyst-c'];
 const RADAR_ANIMATION_DURATION_MS = 940;
 const RADAR_FLOATING_VISIBLE_LIMIT = 5;
@@ -141,9 +67,15 @@ function polarToCartesian(cx, cy, r, angleDeg) {
 }
 
 function getCategoryBadgeClass(category) {
-  if (category === 'TECHNOLOGY') return 'tech';
+  if (category === 'TECHNOLOGICAL' || category === 'TECHNOLOGY') return 'tech';
   if (category === 'ENVIRONMENTAL') return 'enviro';
-  return category.toLowerCase();
+  return String(category || 'social').toLowerCase();
+}
+
+function formatCategoryLabel(category) {
+  if (category === 'TECHNOLOGICAL' || category === 'TECHNOLOGY') return 'TECH';
+  if (category === 'ENVIRONMENTAL') return 'ENVIRON';
+  return String(category || 'SIGNAL');
 }
 
 function getPriorityFill(color) {
@@ -157,9 +89,23 @@ function getSignalAxisIndex(signal) {
 }
 
 function getHorizonCode(signal) {
+  if (signal.horizonCode) return signal.horizonCode;
   if (signal.horizon?.startsWith('H1')) return 'H1';
   if (signal.horizon?.startsWith('H3')) return 'H3';
   return 'H2';
+}
+
+function formatSignalDate(value) {
+  if (!value) return 'Not recorded';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Not recorded';
+
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 function signalMatchesFilter(signal, filter) {
@@ -172,7 +118,8 @@ function signalMatchesFilter(signal, filter) {
     signal.category,
     signal.horizon,
     signal.horizonDetail,
-  ].some(value => value?.toLowerCase().includes(normalizedFilter));
+    ...(signal.tags || []),
+  ].some(value => String(value || '').toLowerCase().includes(normalizedFilter));
 }
 
 function createRadarPlacement(category, horizon, currentCount) {
@@ -184,10 +131,6 @@ function createRadarPlacement(category, horizon, currentCount) {
     radius: HORIZON_RADIUS[horizon],
     angleOffset: angleOffsets[currentCount % angleOffsets.length],
   };
-}
-
-function getDefaultRadarSignals() {
-  return PROTOTYPE_SIGNALS.filter(signal => signal.placement);
 }
 
 function PriorityMeter({ color, count }) {
@@ -235,13 +178,13 @@ function SignalDetailsPanel({ signal, onClose }) {
           </div>
           <div className="signal-details-pill">
             <span>CATEGORY</span>
-            <strong>{signal.category}</strong>
+            <strong>{formatCategoryLabel(signal.category)}</strong>
           </div>
         </div>
 
         <div className="signal-details-section">
           <p className="section-label">DESCRIPTION</p>
-          <p className="signal-details-description">{signal.description}</p>
+          <p className="signal-details-description">{signal.fullDescription || signal.description}</p>
         </div>
 
         <div className="signal-details-assessment">
@@ -266,7 +209,7 @@ function SignalDetailsPanel({ signal, onClose }) {
           </div>
           <div className="metadata-row">
             <span>Creation Date</span>
-            <strong>{signal.creationDate || 'Jan 12, 2024'}</strong>
+            <strong>{signal.creationDate || formatSignalDate(signal.createdAt)}</strong>
           </div>
           <div className="metadata-row">
             <span>Horizon</span>
@@ -422,7 +365,7 @@ function RadarChart({ signals, selectedSignalId, zoom, radarAnimation, onSelect 
   );
 }
 
-function AddToRadarModal({ signal, options, isEditing, onChange, onClose, onConfirm }) {
+function AddToRadarModal({ signal, options, isEditing, isSaving, onChange, onClose, onConfirm }) {
   if (!signal) return null;
 
   const modalTitle = isEditing ? 'Edit Signal on Radar' : 'Add Signal to Radar';
@@ -443,7 +386,7 @@ function AddToRadarModal({ signal, options, isEditing, onChange, onClose, onConf
 
         <div className="radar-add-summary">
           <span className={`badge badge-${getCategoryBadgeClass(signal.category)}`}>
-            {signal.category}
+            {formatCategoryLabel(signal.category)}
           </span>
           <p>{signal.description}</p>
         </div>
@@ -482,11 +425,11 @@ function AddToRadarModal({ signal, options, isEditing, onChange, onClose, onConf
         </div>
 
         <div className="radar-modal-actions">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSaving}>
             Cancel
           </button>
-          <button type="button" className="btn btn-primary" onClick={onConfirm}>
-            {confirmLabel}
+          <button type="button" className="btn btn-primary" onClick={onConfirm} disabled={isSaving}>
+            {isSaving ? 'Saving...' : confirmLabel}
           </button>
         </div>
       </div>
@@ -496,20 +439,21 @@ function AddToRadarModal({ signal, options, isEditing, onChange, onClose, onConf
 
 export default function EnvironmentalScan() {
   const { workshopId } = useParams();
-  const { users: liveSessionUsers } = useWorkshopSessionPresence(workshopId || 1);
+  const activeWorkshopId = Number(workshopId || 1);
+  const { users: liveSessionUsers } = useWorkshopSessionPresence(activeWorkshopId);
   const [filter, setFilter] = useState('');
   const [selectedSignalId, setSelectedSignalId] = useState(null);
   const [zoom, setZoom] = useState(1);
-  const [radarSignals, setRadarSignals] = useState(() =>
-    readRadarSignalsFromStorage(workshopId, getDefaultRadarSignals(), {
-      persistFallback: true,
-    }),
-  );
+  const [sourceSignals, setSourceSignals] = useState([]);
+  const [radarSignals, setRadarSignals] = useState([]);
+  const [selectionLoading, setSelectionLoading] = useState(true);
+  const [selectionError, setSelectionError] = useState('');
+  const [selectionSavingId, setSelectionSavingId] = useState(null);
   const [signalToAdd, setSignalToAdd] = useState(null);
   const [radarAnimation, setRadarAnimation] = useState(null);
   const [showAllRadarSignals, setShowAllRadarSignals] = useState(false);
   const [addOptions, setAddOptions] = useState({
-    category: 'TECHNOLOGY',
+    category: 'TECHNOLOGICAL',
     horizon: 'H2',
   });
   const [workshop, setWorkshop] = useState(null);
@@ -520,7 +464,7 @@ export default function EnvironmentalScan() {
     if (!remoteRadarUpdate || !Array.isArray(remoteRadarUpdate.signals)) return;
 
     const syncedSignals = remoteRadarUpdate.signals;
-    saveRadarSignalsToStorage(workshopId, syncedSignals);
+    saveRadarSignalsToStorage(activeWorkshopId, syncedSignals);
     setRadarSignals(syncedSignals);
     setSelectedSignalId(currentSignalId => {
       if (!currentSignalId) return currentSignalId;
@@ -549,10 +493,10 @@ export default function EnvironmentalScan() {
       id: `${remoteRadarUpdate.clientMutationId || remoteRadarUpdate.receivedAt}`,
       message: `${actorName} ${actionLabel} ${signalName}`,
     });
-  }, [workshopId]);
+  }, [activeWorkshopId]);
 
   const { sendRadarUpdate } = useRadarCollaboration(
-    workshopId || 1,
+    activeWorkshopId,
     handleRemoteRadarUpdate,
   );
 
@@ -579,7 +523,7 @@ export default function EnvironmentalScan() {
       if (!workshopId) return;
 
       try {
-        const response = await workshopsApi.getById(Number(workshopId));
+        const response = await workshopsApi.getById(activeWorkshopId);
         if (!isMounted) return;
         setWorkshop(response.data);
       } catch (error) {
@@ -598,16 +542,63 @@ export default function EnvironmentalScan() {
     return () => {
       isMounted = false;
     };
-  }, [workshopId]);
+  }, [activeWorkshopId, workshopId]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSignalSelection() {
+      setSelectionLoading(true);
+      setSelectionError('');
+
+      try {
+        const response = await workshopsApi.getSignalSelection(activeWorkshopId);
+        if (!isMounted) return;
+
+        const availableSignalsFromBank = response.data?.available || [];
+        const selectedSignals = response.data?.selected || [];
+        const mergedSignals = [...availableSignalsFromBank, ...selectedSignals].reduce((signals, signal) => {
+          if (!signals.some(item => item.id === signal.id)) {
+            signals.push(signal);
+          }
+
+          return signals;
+        }, []);
+
+        setSourceSignals(mergedSignals);
+        setRadarSignals(selectedSignals);
+        saveRadarSignalsToStorage(activeWorkshopId, selectedSignals);
+      } catch (error) {
+        if (!isMounted) return;
+
+        if (error?.response?.status === 403) {
+          setAccessDenied(true);
+        } else {
+          console.error('Failed to load signal selection.', error);
+          setSelectionError('Signal Selection could not load from the Signal Bank.');
+        }
+      } finally {
+        if (isMounted) {
+          setSelectionLoading(false);
+        }
+      }
+    }
+
+    loadSignalSelection();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeWorkshopId]);
 
   const selectedSignal = useMemo(
     () => {
       const signalOnRadar = radarSignals.find(signal => signal.id === selectedSignalId);
       if (signalOnRadar) return signalOnRadar;
 
-      return PROTOTYPE_SIGNALS.find(signal => signal.id === selectedSignalId);
+      return sourceSignals.find(signal => signal.id === selectedSignalId);
     },
-    [radarSignals, selectedSignalId],
+    [radarSignals, selectedSignalId, sourceSignals],
   );
 
   const radarSignalIds = useMemo(
@@ -619,10 +610,10 @@ export default function EnvironmentalScan() {
     [filter, radarSignals],
   );
   const availableSignals = useMemo(
-    () => PROTOTYPE_SIGNALS.filter(signal =>
+    () => sourceSignals.filter(signal =>
       !radarSignalIds.has(signal.id) && signalMatchesFilter(signal, filter),
     ),
-    [filter, radarSignalIds],
+    [filter, radarSignalIds, sourceSignals],
   );
   const visibleRadarSignals = showAllRadarSignals
     ? filteredRadarSignals
@@ -663,7 +654,7 @@ export default function EnvironmentalScan() {
     const nextSignals = updater(radarSignals);
 
     setRadarSignals(nextSignals);
-    saveRadarSignalsToStorage(workshopId, nextSignals);
+    saveRadarSignalsToStorage(activeWorkshopId, nextSignals);
     sendRadarUpdate({
       signals: nextSignals,
       ...collaborationMeta,
@@ -676,7 +667,7 @@ export default function EnvironmentalScan() {
 
     setSignalToAdd(signalForModal);
     setAddOptions({
-      category: signalForModal.category || 'TECHNOLOGY',
+      category: signalForModal.category || 'TECHNOLOGICAL',
       horizon: getHorizonCode(signalForModal),
     });
   }
@@ -692,65 +683,104 @@ export default function EnvironmentalScan() {
     }));
   }
 
-  function handleConfirmAddToRadar() {
+  async function handleConfirmAddToRadar() {
     if (!signalToAdd) return;
 
     const animationAction = radarSignalIds.has(signalToAdd.id) ? 'edited' : 'added';
+    const sameAreaCount = radarSignals.filter(signal => {
+      const sameSignal = signal.id === signalToAdd.id;
+      const sameCategory = getSignalAxisIndex(signal) === CATEGORY_AXIS[addOptions.category];
+      const sameHorizon = signal.placement?.radius === HORIZON_RADIUS[addOptions.horizon];
 
-    updateRadarSignals(prevSignals => {
-      const sameAreaCount = prevSignals.filter(signal => {
-        const sameSignal = signal.id === signalToAdd.id;
-        const sameCategory = getSignalAxisIndex(signal) === CATEGORY_AXIS[addOptions.category];
-        const sameHorizon = signal.placement?.radius === HORIZON_RADIUS[addOptions.horizon];
+      return !sameSignal && sameCategory && sameHorizon;
+    }).length;
+    const placement = createRadarPlacement(addOptions.category, addOptions.horizon, sameAreaCount);
 
-        return !sameSignal && sameCategory && sameHorizon;
-      }).length;
+    setSelectionSavingId(signalToAdd.id);
 
-      const radarSignal = {
+    try {
+      const response = await workshopsApi.upsertSignalSelection(
+        activeWorkshopId,
+        signalToAdd.id,
+        {
+          category: addOptions.category,
+          horizon: addOptions.horizon,
+          placement,
+        },
+      );
+      const savedRadarSignal = response.data || {
         ...signalToAdd,
         category: addOptions.category,
         horizon: HORIZON_LABELS[addOptions.horizon],
+        horizonCode: addOptions.horizon,
         horizonDetail: HORIZON_DETAILS[addOptions.horizon],
-        placement: createRadarPlacement(addOptions.category, addOptions.horizon, sameAreaCount),
+        placement,
       };
 
-      const signalAlreadyExists = prevSignals.some(signal => signal.id === signalToAdd.id);
-      if (signalAlreadyExists) {
-        return prevSignals.map(signal =>
-          signal.id === signalToAdd.id ? radarSignal : signal,
-        );
-      }
+      updateRadarSignals(prevSignals => {
+        const signalAlreadyExists = prevSignals.some(signal => signal.id === signalToAdd.id);
+        if (signalAlreadyExists) {
+          return prevSignals.map(signal =>
+            signal.id === signalToAdd.id ? savedRadarSignal : signal,
+          );
+        }
 
-      return [...prevSignals, radarSignal];
-    }, {
-      action: animationAction,
-      signalId: signalToAdd.id,
-      signalName: signalToAdd.name,
-    });
+        return [...prevSignals, savedRadarSignal];
+      }, {
+        action: animationAction,
+        signalId: signalToAdd.id,
+        signalName: signalToAdd.name,
+      });
 
-    setSelectedSignalId(signalToAdd.id);
-    setRadarAnimation({
-      signalId: signalToAdd.id,
-      action: animationAction,
-      token: `${signalToAdd.id}-${Date.now()}`,
-    });
-    closeAddSignalModal();
+      setSourceSignals(prevSignals => {
+        if (prevSignals.some(signal => signal.id === savedRadarSignal.id)) {
+          return prevSignals.map(signal =>
+            signal.id === savedRadarSignal.id ? { ...signal, ...savedRadarSignal } : signal,
+          );
+        }
+
+        return [...prevSignals, savedRadarSignal];
+      });
+      setSelectedSignalId(signalToAdd.id);
+      setRadarAnimation({
+        signalId: signalToAdd.id,
+        action: animationAction,
+        token: `${signalToAdd.id}-${Date.now()}`,
+      });
+      closeAddSignalModal();
+    } catch (error) {
+      console.error('Failed to update signal selection.', error);
+      alert('Failed to update Signal Selection. Please try again.');
+    } finally {
+      setSelectionSavingId(null);
+    }
   }
 
-  function removeSignalFromRadar(signalId) {
+  async function removeSignalFromRadar(signalId) {
     const removedSignal = radarSignals.find(signal => signal.id === signalId);
 
-    updateRadarSignals(prevSignals =>
-      prevSignals.filter(signal => signal.id !== signalId),
-      {
-        action: 'removed',
-        signalId,
-        signalName: removedSignal?.name,
-      },
-    );
+    setSelectionSavingId(signalId);
 
-    if (selectedSignalId === signalId) {
-      setSelectedSignalId(null);
+    try {
+      await workshopsApi.removeSignalSelection(activeWorkshopId, signalId);
+
+      updateRadarSignals(prevSignals =>
+        prevSignals.filter(signal => signal.id !== signalId),
+        {
+          action: 'removed',
+          signalId,
+          signalName: removedSignal?.name,
+        },
+      );
+
+      if (selectedSignalId === signalId) {
+        setSelectedSignalId(null);
+      }
+    } catch (error) {
+      console.error('Failed to remove signal selection.', error);
+      alert('Failed to remove signal from Radar. Please try again.');
+    } finally {
+      setSelectionSavingId(null);
     }
   }
 
@@ -794,7 +824,9 @@ export default function EnvironmentalScan() {
                 <span>⊕</span>
                 Signal Selection
               </h2>
-              <span className="badge badge-action">{availableSignals.length} Ready</span>
+              <span className="badge badge-action">
+                {selectionLoading ? 'Loading' : `${availableSignals.length} Ready`}
+              </span>
             </div>
 
             <div className="exact-sidebar-search">
@@ -819,12 +851,27 @@ export default function EnvironmentalScan() {
                   <p>Signal Selection</p>
                   <h3>Ready to Add</h3>
                 </div>
-                <span>{availableSignals.length}</span>
+                <span>{selectionLoading ? '...' : availableSignals.length}</span>
               </div>
 
               <div className="radar-sidebar-list">
+                {selectionError && (
+                  <div className="radar-empty-state compact">
+                    <strong>Signal Bank unavailable</strong>
+                    <span>{selectionError}</span>
+                  </div>
+                )}
+
+                {selectionLoading && (
+                  <div className="radar-empty-state compact">
+                    <strong>Loading Signal Bank</strong>
+                    <span>Preparing signals that can be selected for this workshop.</span>
+                  </div>
+                )}
+
                 {availableSignals.map(signal => {
                   const isSelected = selectedSignalId === signal.id;
+                  const isSavingSignal = selectionSavingId === signal.id;
 
                   return (
                     <article
@@ -839,7 +886,7 @@ export default function EnvironmentalScan() {
                       >
                         <div className="signal-card-top-row">
                           <span className={`badge badge-${getCategoryBadgeClass(signal.category)}`}>
-                            {signal.category}
+                            {formatCategoryLabel(signal.category)}
                           </span>
                           <PriorityMeter color={signal.dotColor} count={signal.dotCount} />
                         </div>
@@ -853,19 +900,20 @@ export default function EnvironmentalScan() {
                           type="button"
                           className="signal-add-btn"
                           onClick={() => openAddSignalModal(signal)}
+                          disabled={isSavingSignal}
                         >
                           <Plus size={14} />
-                          Add to Radar
+                          {isSavingSignal ? 'Adding...' : 'Add to Radar'}
                         </button>
                       </div>
                     </article>
                   );
                 })}
 
-                {availableSignals.length === 0 && (
+                {!selectionLoading && !selectionError && availableSignals.length === 0 && (
                   <div className="radar-empty-state compact">
                     <strong>No signals ready to add</strong>
-                    <span>Existing radar items are in the top-right panel.</span>
+                    <span>Add published signals in the Signal Bank or remove existing radar items.</span>
                   </div>
                 )}
               </div>
@@ -933,6 +981,7 @@ export default function EnvironmentalScan() {
                 <div className="radar-floating-items">
                   {visibleRadarSignals.map(signal => {
                     const isSelected = selectedSignalId === signal.id;
+                    const isSavingSignal = selectionSavingId === signal.id;
                     const cardAnimation = radarAnimation?.signalId === signal.id ? radarAnimation.action : null;
                     const cardClassName = [
                       'radar-floating-card',
@@ -958,8 +1007,9 @@ export default function EnvironmentalScan() {
                             type="button"
                             className="radar-floating-action-btn"
                             onClick={() => openAddSignalModal(signal)}
+                            disabled={isSavingSignal}
                           >
-                            Edit
+                            {isSavingSignal ? 'Saving' : 'Edit'}
                           </button>
                           <button
                             type="button"
@@ -967,6 +1017,7 @@ export default function EnvironmentalScan() {
                             onClick={() => removeSignalFromRadar(signal.id)}
                             aria-label={`Remove ${signal.name} from radar`}
                             title="Remove from Radar"
+                            disabled={isSavingSignal}
                           >
                             <Trash2 size={13} />
                           </button>
@@ -1011,6 +1062,7 @@ export default function EnvironmentalScan() {
           signal={signalToAdd}
           options={addOptions}
           isEditing={isEditingRadarSignal}
+          isSaving={selectionSavingId === signalToAdd.id}
           onChange={updateAddOption}
           onClose={closeAddSignalModal}
           onConfirm={handleConfirmAddToRadar}
