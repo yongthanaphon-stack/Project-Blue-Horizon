@@ -16,6 +16,10 @@ describe('WorkshopsService signal selection', () => {
         upsert: jest.fn(),
         deleteMany: jest.fn(),
       },
+      workshopSignalCandidate: {
+        findMany: jest.fn(),
+        findFirst: jest.fn(),
+      },
     };
     const notifications = {
       notifyWorkshopCreated: jest.fn(),
@@ -27,7 +31,7 @@ describe('WorkshopsService signal selection', () => {
     };
   }
 
-  it('loads Signal Bank items and excludes signals already selected for the workshop', async () => {
+  it('loads only workshop candidate signals and excludes signals already selected for the radar', async () => {
     const { service, prisma } = createService();
     prisma.workshop.findUnique.mockResolvedValue({
       id: 7,
@@ -56,44 +60,51 @@ describe('WorkshopsService signal selection', () => {
         },
       },
     ]);
-    prisma.signal.findMany.mockResolvedValue([
+    prisma.workshopSignalCandidate.findMany.mockResolvedValue([
       {
-        id: 101,
-        name: 'AI advising assistants',
-        description: 'AI supports student advising.',
-        shortDetails: 'AI support',
-        pestelCategories: [PestelCategory.TECHNOLOGICAL],
-        timeHorizon: TimeHorizon.H2,
-        impactLevel: 'REGION',
-        impactScore: 7.4,
-        tags: ['ai'],
-        createdAt: new Date('2026-01-02T00:00:00Z'),
-        updatedAt: new Date('2026-01-03T00:00:00Z'),
+        id: 1,
+        workshopId: 7,
+        signalId: 101,
+        signal: {
+          id: 101,
+          name: 'AI advising assistants',
+          description: 'AI supports student advising.',
+          shortDetails: 'AI support',
+          pestelCategories: [PestelCategory.TECHNOLOGICAL],
+          timeHorizon: TimeHorizon.H2,
+          impactLevel: 'REGION',
+          impactScore: 7.4,
+          tags: ['ai'],
+          createdAt: new Date('2026-01-02T00:00:00Z'),
+          updatedAt: new Date('2026-01-03T00:00:00Z'),
+        },
       },
       {
-        id: 202,
-        name: 'Climate resilient campus',
-        description: 'Campus planning adapts to climate risk.',
-        shortDetails: 'Climate planning',
-        pestelCategories: [PestelCategory.ENVIRONMENTAL],
-        timeHorizon: TimeHorizon.H3,
-        impactLevel: 'GLOBAL',
-        impactScore: 8.5,
-        tags: ['climate'],
-        createdAt: new Date('2026-02-02T00:00:00Z'),
-        updatedAt: new Date('2026-02-03T00:00:00Z'),
+        id: 2,
+        workshopId: 7,
+        signalId: 202,
+        signal: {
+          id: 202,
+          name: 'Climate resilient campus',
+          description: 'Campus planning adapts to climate risk.',
+          shortDetails: 'Climate planning',
+          pestelCategories: [PestelCategory.ENVIRONMENTAL],
+          timeHorizon: TimeHorizon.H3,
+          impactLevel: 'GLOBAL',
+          impactScore: 8.5,
+          tags: ['climate'],
+          createdAt: new Date('2026-02-02T00:00:00Z'),
+          updatedAt: new Date('2026-02-03T00:00:00Z'),
+        },
       },
     ]);
 
     const result = await service.getSignalSelection(7, 3);
 
-    expect(prisma.signal.findMany).toHaveBeenCalledWith(
+    expect(prisma.workshopSignalCandidate.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          deletedAt: null,
-          isGlobal: true,
-          status: 'PUBLISHED',
-          workshopId: null,
+          workshopId: 7,
         }),
       }),
     );
@@ -110,24 +121,31 @@ describe('WorkshopsService signal selection', () => {
     expect(result.available.map((signal) => signal.id)).toEqual([202]);
   });
 
+  it('returns no available signals when the workshop has no candidate signals', async () => {
+    const { service, prisma } = createService();
+    prisma.workshop.findUnique.mockResolvedValue({
+      id: 7,
+      participants: [{ userId: 3 }],
+    });
+    prisma.workshopSignalSelection.findMany.mockResolvedValue([]);
+    prisma.workshopSignalCandidate.findMany.mockResolvedValue([]);
+
+    const result = await service.getSignalSelection(7, 3);
+
+    expect(result.available).toEqual([]);
+    expect(result.selected).toEqual([]);
+  });
+
   it('upserts workshop signal selection without mutating the Signal Bank source record', async () => {
     const { service, prisma } = createService();
     prisma.workshop.findUnique.mockResolvedValue({
       id: 7,
       participants: [{ userId: 3 }],
     });
-    prisma.signal.findFirst.mockResolvedValue({
-      id: 202,
-      name: 'Climate resilient campus',
-      description: 'Campus planning adapts to climate risk.',
-      shortDetails: 'Climate planning',
-      pestelCategories: [PestelCategory.ENVIRONMENTAL],
-      timeHorizon: TimeHorizon.H3,
-      impactLevel: 'GLOBAL',
-      impactScore: 8.5,
-      tags: ['climate'],
-      createdAt: new Date('2026-02-02T00:00:00Z'),
-      updatedAt: new Date('2026-02-03T00:00:00Z'),
+    prisma.workshopSignalCandidate.findFirst.mockResolvedValue({
+      id: 2,
+      workshopId: 7,
+      signalId: 202,
     });
     prisma.workshopSignalSelection.upsert.mockResolvedValue({
       id: 22,
@@ -157,13 +175,10 @@ describe('WorkshopsService signal selection', () => {
       placement: { axisIndex: 4, radius: 214, angleOffset: -9 },
     });
 
-    expect(prisma.signal.findFirst).toHaveBeenCalledWith({
+    expect(prisma.workshopSignalCandidate.findFirst).toHaveBeenCalledWith({
       where: {
-        id: 202,
-        deletedAt: null,
-        isGlobal: true,
-        status: 'PUBLISHED',
-        workshopId: null,
+        workshopId: 7,
+        signalId: 202,
       },
     });
     expect(prisma.workshopSignalSelection.upsert).toHaveBeenCalledWith(
@@ -182,6 +197,32 @@ describe('WorkshopsService signal selection', () => {
         signalId: 202,
         category: PestelCategory.ENVIRONMENTAL,
         horizonCode: TimeHorizon.H3,
+      }),
+    );
+  });
+
+  it('creates workshop signal candidates from selected Signal Bank ids', async () => {
+    const { service, prisma } = createService();
+    prisma.workshop.create = jest.fn().mockResolvedValue({ id: 7 });
+
+    await service.create({
+      name: 'Future Learning Workshop',
+      description: 'Explore signals for learning futures.',
+      horizon: TimeHorizon.H2,
+      participantIds: [3],
+      signalCandidateIds: [202, 101, 202],
+    }, 3);
+
+    expect(prisma.workshop.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          signalCandidates: {
+            create: [
+              { signal: { connect: { id: 202 } }, addedBy: { connect: { id: 3 } } },
+              { signal: { connect: { id: 101 } }, addedBy: { connect: { id: 3 } } },
+            ],
+          },
+        }),
       }),
     );
   });

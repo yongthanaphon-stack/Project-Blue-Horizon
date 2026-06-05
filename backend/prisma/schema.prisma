@@ -64,6 +64,7 @@ model User {
   updatedAt                DateTime                  @updatedAt
   votes                    SignalVote[]
   workshopParticipations   WorkshopParticipant[]
+  workshopSignalCandidates WorkshopSignalCandidate[] @relation("WorkshopSignalCandidateActor")
   workshopSignalSelections WorkshopSignalSelection[] @relation("WorkshopSignalSelectionActor")
   ownedSignals             Signal[]                  @relation("SignalOwner")
   signalHistories          SignalHistory[]
@@ -98,6 +99,7 @@ model Signal {
   references         ReferenceSource[]
   scenarios          Scenario[]                @relation("ScenarioSignals")
   histories          SignalHistory[]
+  workshopCandidates WorkshopSignalCandidate[]
   workshopSelections WorkshopSignalSelection[]
 }
 
@@ -145,7 +147,24 @@ model Workshop {
   scenarios        Scenario[]
   outputs          WorkshopOutput[]
   signals          Signal[]                  @relation("WorkshopSignals")
+  signalCandidates WorkshopSignalCandidate[]
   signalSelections WorkshopSignalSelection[]
+}
+
+model WorkshopSignalCandidate {
+  id         Int      @id @default(autoincrement())
+  workshopId Int
+  signalId   Int
+  addedById  Int?
+  workshop   Workshop @relation(fields: [workshopId], references: [id], onDelete: Cascade)
+  signal     Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  addedBy    User?    @relation("WorkshopSignalCandidateActor", fields: [addedById], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([workshopId, signalId])
+  @@index([workshopId, createdAt])
+  @@index([signalId])
 }
 
 model WorkshopSignalSelection {

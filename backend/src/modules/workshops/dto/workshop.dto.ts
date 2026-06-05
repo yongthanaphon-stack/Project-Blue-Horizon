@@ -24,6 +24,11 @@ export class CreateWorkshopDto {
   @IsArray()
   @IsInt({ each: true })
   participantIds?: number[];
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  signalCandidateIds?: number[];
 }
 
 export class UpsertWorkshopSignalSelectionDto {

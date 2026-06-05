@@ -52,6 +52,13 @@ type WorkshopSelectionRecord = {
   signal: SignalBankRecord;
 };
 
+type WorkshopCandidateRecord = {
+  id: number;
+  workshopId: number;
+  signalId: number;
+  signal: SignalBankRecord;
+};
+
 function getPrimaryCategory(signal: SignalBankRecord) {
   return signal.pestelCategories[0] || PestelCategory.TECHNOLOGICAL;
 }
@@ -184,7 +191,7 @@ export class WorkshopsService {
   async getSignalSelection(id: number, userId: number) {
     await this.assertWorkshopAccess(id, userId);
 
-    const [selectedRecords, signalBankSignals] = await Promise.all([
+    const [selectedRecords, candidateRecords] = await Promise.all([
       this.prisma.workshopSignalSelection.findMany({
         where: { workshopId: id },
         include: {
@@ -195,18 +202,14 @@ export class WorkshopsService {
           { id: 'asc' },
         ],
       }),
-      this.prisma.signal.findMany({
-        where: {
-          deletedAt: null,
-          isGlobal: true,
-          status: 'PUBLISHED',
-          workshopId: null,
+      this.prisma.workshopSignalCandidate.findMany({
+        where: { workshopId: id },
+        include: {
+          signal: { select: SIGNAL_BANK_SELECT },
         },
-        select: SIGNAL_BANK_SELECT,
         orderBy: [
-          { impactScore: 'desc' },
-          { totalVotes: 'desc' },
-          { updatedAt: 'desc' },
+          { createdAt: 'asc' },
+          { id: 'asc' },
         ],
       }),
     ]);
@@ -216,9 +219,13 @@ export class WorkshopsService {
     );
 
     return {
-      available: signalBankSignals
-        .filter((signal) => !selectedSignalIds.has(signal.id))
-        .map((signal) => toWorkshopSignal(signal)),
+      available: candidateRecords
+        .filter((candidate: WorkshopCandidateRecord) =>
+          !selectedSignalIds.has(candidate.signalId),
+        )
+        .map((candidate: WorkshopCandidateRecord) =>
+          toWorkshopSignal(candidate.signal),
+        ),
       selected: selectedRecords.map((selection) =>
         toWorkshopSignal(selection.signal, selection),
       ),
@@ -233,18 +240,15 @@ export class WorkshopsService {
   ) {
     await this.assertWorkshopAccess(id, userId);
 
-    const sourceSignal = await this.prisma.signal.findFirst({
+    const candidateSignal = await this.prisma.workshopSignalCandidate.findFirst({
       where: {
-        id: signalId,
-        deletedAt: null,
-        isGlobal: true,
-        status: 'PUBLISHED',
-        workshopId: null,
+        workshopId: id,
+        signalId,
       },
     });
 
-    if (!sourceSignal) {
-      throw new NotFoundException('Signal Bank source signal not found');
+    if (!candidateSignal) {
+      throw new NotFoundException('Signal is not in this workshop Signal Selection');
     }
 
     const selection = await this.prisma.workshopSignalSelection.upsert({
@@ -290,6 +294,9 @@ export class WorkshopsService {
   }
 
   async create(data: CreateWorkshopDto, actorId?: number) {
+    const signalCandidateIds = Array.from(
+      new Set((data.signalCandidateIds || []).filter(Boolean)),
+    );
     const participantIds = new Set([
       ...(data.participantIds || []),
       ...(actorId ? [actorId] : []),
@@ -305,6 +312,15 @@ export class WorkshopsService {
       workshopData.participants = {
         create: Array.from(participantIds).map((userId) => ({
           user: { connect: { id: userId } },
+        })),
+      };
+    }
+
+    if (signalCandidateIds.length) {
+      workshopData.signalCandidates = {
+        create: signalCandidateIds.map((signalId) => ({
+          signal: { connect: { id: signalId } },
+          ...(actorId ? { addedBy: { connect: { id: actorId } } } : {}),
         })),
       };
     }

@@ -1,7 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, Copy, Crown, Mail, Plus, Search, UserPlus, Users, X } from 'lucide-react';
-import { usersApi, workshopsApi } from '../../../api/api';
+import {
+  Check,
+  Copy,
+  Crown,
+  Database,
+  ListChecks,
+  Mail,
+  Plus,
+  Search,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react';
+import { signalsApi, usersApi, workshopsApi } from '../../../api/api';
 import { connectNotificationSocket } from '../../../api/notificationSocket';
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -28,6 +40,32 @@ const HORIZON_OPTIONS = [
 
 const MEMBER_LIMIT = 20;
 const ROLE_OPTIONS = ['Editor', 'Contributor'];
+const SIGNAL_FETCH_LIMIT = 100;
+
+function getSignalPreview(signal = {}) {
+  const text = signal.shortDetails || signal.description || 'No description provided.';
+  return text.length > 118 ? `${text.slice(0, 118).trim()}...` : text;
+}
+
+function getPrimaryPestel(signal = {}) {
+  return signal.pestelCategories?.[0] || 'UNCATEGORIZED';
+}
+
+function getSignalBadgeClass(signal = {}) {
+  const category = getPrimaryPestel(signal).toLowerCase().replace('technological', 'technology');
+  return `bank-badge-${category}`;
+}
+
+function normalizeSignalBankItem(signal) {
+  return {
+    ...signal,
+    id: Number(signal.id),
+    impactScore: signal.impactScore === null || signal.impactScore === undefined
+      ? null
+      : Number(signal.impactScore),
+    totalVotes: signal.totalVotes ?? signal._count?.votes ?? 0,
+  };
+}
 
 function getInitials(name = '') {
   return name
@@ -84,6 +122,13 @@ export default function NewWorkshop() {
   const [members, setMembers] = useState([]);
   const [removingMemberIds, setRemovingMemberIds] = useState([]);
   const [copiedInvite, setCopiedInvite] = useState(false);
+  const [signalPickerOpen, setSignalPickerOpen] = useState(false);
+  const [signalBankSignals, setSignalBankSignals] = useState([]);
+  const [signalBankLoading, setSignalBankLoading] = useState(false);
+  const [signalBankError, setSignalBankError] = useState('');
+  const [signalQuery, setSignalQuery] = useState('');
+  const [signalCandidates, setSignalCandidates] = useState([]);
+  const [removingSignalIds, setRemovingSignalIds] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -135,6 +180,38 @@ export default function NewWorkshop() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!signalPickerOpen || signalBankSignals.length) return undefined;
+
+    let isMounted = true;
+
+    async function loadSignalBankSignals() {
+      setSignalBankLoading(true);
+      setSignalBankError('');
+
+      try {
+        const response = await signalsApi.getAll({ limit: SIGNAL_FETCH_LIMIT });
+        if (!isMounted) return;
+
+        setSignalBankSignals((response.data?.data || []).map(normalizeSignalBankItem));
+      } catch (error) {
+        console.warn('Failed to load Signal Bank candidates.', error);
+        if (isMounted) {
+          setSignalBankSignals([]);
+          setSignalBankError('Signal Bank could not be loaded.');
+        }
+      } finally {
+        if (isMounted) setSignalBankLoading(false);
+      }
+    }
+
+    loadSignalBankSignals();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [signalBankSignals.length, signalPickerOpen]);
+
   const hostMember = useMemo(() => ({
     id: currentUser?.id ? String(currentUser.id) : 'host',
     name: currentUser?.name || 'Current Host',
@@ -144,6 +221,10 @@ export default function NewWorkshop() {
   }), [currentUser]);
 
   const memberCount = members.length + 1;
+  const signalCandidateIds = useMemo(
+    () => new Set(signalCandidates.map(signal => Number(signal.id))),
+    [signalCandidates],
+  );
 
   const availableUsers = useMemo(() => {
     const normalizedQuery = memberQuery.trim().toLowerCase();
@@ -159,6 +240,22 @@ export default function NewWorkshop() {
       return !isSelected && matchesQuery;
     });
   }, [directoryUsers, memberQuery, members]);
+
+  const availableSignalBankItems = useMemo(() => {
+    const normalizedQuery = signalQuery.trim().toLowerCase();
+
+    return signalBankSignals.filter(signal => {
+      const alreadyAdded = signalCandidateIds.has(Number(signal.id));
+      const matchesQuery =
+        !normalizedQuery ||
+        signal.name?.toLowerCase().includes(normalizedQuery) ||
+        signal.shortDetails?.toLowerCase().includes(normalizedQuery) ||
+        signal.description?.toLowerCase().includes(normalizedQuery) ||
+        signal.tags?.some(tag => tag.toLowerCase().includes(normalizedQuery));
+
+      return !alreadyAdded && matchesQuery;
+    });
+  }, [signalBankSignals, signalCandidateIds, signalQuery]);
 
   function updateField(field, value) {
     if (field === 'name' && value.trim()) {
@@ -202,6 +299,30 @@ export default function NewWorkshop() {
     }, 220);
   }
 
+  function addSignalCandidate(signal) {
+    setSignalCandidates(prev => {
+      const alreadyAdded = prev.some(item => Number(item.id) === Number(signal.id));
+      if (alreadyAdded) return prev;
+
+      return [
+        ...prev,
+        {
+          ...signal,
+          addedAt: Date.now(),
+        },
+      ];
+    });
+  }
+
+  function removeSignalCandidate(signalId) {
+    setRemovingSignalIds(prev => (prev.includes(signalId) ? prev : [...prev, signalId]));
+
+    window.setTimeout(() => {
+      setSignalCandidates(prev => prev.filter(signal => Number(signal.id) !== Number(signalId)));
+      setRemovingSignalIds(prev => prev.filter(id => Number(id) !== Number(signalId)));
+    }, 180);
+  }
+
   async function copyInviteLink() {
     const sessionSlug = form.name.trim()
       .toLowerCase()
@@ -233,6 +354,7 @@ export default function NewWorkshop() {
       description: form.description.trim(),
       horizon: form.horizon,
       participantIds: members.map(member => Number(member.id)),
+      signalCandidateIds: signalCandidates.map(signal => Number(signal.id)),
     };
 
     setSaving(true);
@@ -281,6 +403,57 @@ export default function NewWorkshop() {
           aria-label={isHost ? `${user.name} is the host` : `Add ${user.name}`}
         >
           {isHost ? <Crown size={16} /> : <Plus size={17} />}
+        </button>
+      </article>
+    );
+  }
+
+  function renderSignalBankRow(signal) {
+    return (
+      <article className="workshop-signal-bank-row" key={signal.id}>
+        <div className="workshop-signal-bank-copy">
+          <div className="workshop-signal-bank-topline">
+            <span className={`bank-badge ${getSignalBadgeClass(signal)}`}>{getPrimaryPestel(signal)}</span>
+            <small>{signal.timeHorizon || 'H1'} · {signal.impactLevel || 'REGION'}</small>
+          </div>
+          <strong>{signal.name}</strong>
+          <p>{getSignalPreview(signal)}</p>
+        </div>
+        <button
+          type="button"
+          className="workshop-signal-add"
+          onClick={() => addSignalCandidate(signal)}
+          aria-label={`Add ${signal.name} to Signal Selection`}
+        >
+          <Plus size={16} />
+        </button>
+      </article>
+    );
+  }
+
+  function renderSignalCandidate(signal, compact = false) {
+    const isRemoving = removingSignalIds.some(id => Number(id) === Number(signal.id));
+
+    return (
+      <article
+        className={`workshop-signal-candidate-row ${isRemoving ? 'removing' : 'added'} ${compact ? 'compact' : ''}`}
+        key={signal.id}
+      >
+        <div className="workshop-signal-bank-copy">
+          <div className="workshop-signal-bank-topline">
+            <span className={`bank-badge ${getSignalBadgeClass(signal)}`}>{getPrimaryPestel(signal)}</span>
+            <small>{signal.timeHorizon || 'H1'}</small>
+          </div>
+          <strong>{signal.name}</strong>
+          {!compact && <p>{getSignalPreview(signal)}</p>}
+        </div>
+        <button
+          type="button"
+          className="workshop-signal-remove"
+          onClick={() => removeSignalCandidate(signal.id)}
+          aria-label={`Remove ${signal.name} from Signal Selection`}
+        >
+          <X size={15} />
         </button>
       </article>
     );
@@ -347,6 +520,48 @@ export default function NewWorkshop() {
               ))}
             </div>
           </div>
+
+          <section className="workshop-signal-selection-panel">
+            <div className="workshop-signal-selection-header">
+              <div>
+                <span className="workshop-signal-selection-icon">
+                  <ListChecks size={18} />
+                </span>
+                <div>
+                  <h2>Signal Selection</h2>
+                  <p>{signalCandidates.length} signals prepared for this workshop radar</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-outline workshop-signal-open"
+                onClick={() => setSignalPickerOpen(true)}
+              >
+                <Database size={17} />
+                Add from Signal Bank
+              </button>
+            </div>
+
+            <div className="workshop-signal-candidate-preview">
+              {signalCandidates.length > 0 ? (
+                signalCandidates.slice(0, 4).map(signal => renderSignalCandidate(signal, true))
+              ) : (
+                <div className="workshop-signal-empty">
+                  <strong>No Signal Selection yet</strong>
+                  <span>Use Add from Signal Bank to prepare signals before creating the session.</span>
+                </div>
+              )}
+              {signalCandidates.length > 4 && (
+                <button
+                  type="button"
+                  className="workshop-signal-more"
+                  onClick={() => setSignalPickerOpen(true)}
+                >
+                  View all {signalCandidates.length} signals
+                </button>
+              )}
+            </div>
+          </section>
 
           <div className="signal-form-footer">
             <span className="auto-save">Draft details stay on this page until you create the session.</span>
@@ -486,6 +701,80 @@ export default function NewWorkshop() {
           </section>
         </aside>
       </div>
+
+      {signalPickerOpen && (
+        <div className="workshop-signal-modal-backdrop">
+          <section className="workshop-signal-modal" role="dialog" aria-modal="true" aria-labelledby="workshop-signal-modal-title">
+            <div className="workshop-signal-modal-header">
+              <div>
+                <p>Signal Bank to Signal Selection</p>
+                <h2 id="workshop-signal-modal-title">Prepare workshop signals</h2>
+              </div>
+              <button type="button" className="signal-details-close" onClick={() => setSignalPickerOpen(false)} aria-label="Close Signal Bank picker">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="workshop-signal-modal-grid">
+              <div className="workshop-signal-modal-column">
+                <div className="workshop-member-search">
+                  <Search size={17} />
+                  <input
+                    type="search"
+                    value={signalQuery}
+                    onChange={event => setSignalQuery(event.target.value)}
+                    placeholder="Search Signal Bank..."
+                    aria-label="Search Signal Bank"
+                  />
+                </div>
+
+                <div className="workshop-signal-modal-list">
+                  {signalBankLoading && (
+                    <p className="workshop-invite-empty">Loading Signal Bank...</p>
+                  )}
+                  {!signalBankLoading && signalBankError && (
+                    <p className="workshop-invite-empty">{signalBankError}</p>
+                  )}
+                  {!signalBankLoading && !signalBankError && availableSignalBankItems.map(renderSignalBankRow)}
+                  {!signalBankLoading && !signalBankError && !availableSignalBankItems.length && (
+                    <p className="workshop-invite-empty">
+                      {signalQuery.trim() ? 'No matching signals.' : 'All loaded Signal Bank items are already added.'}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <aside className="workshop-signal-modal-column selected">
+                <div className="workshop-signal-selected-head">
+                  <div>
+                    <p>Added to Signal Selection</p>
+                    <h3>{signalCandidates.length} signals</h3>
+                  </div>
+                  <span className="badge badge-action">{signalCandidates.length}</span>
+                </div>
+
+                <div className="workshop-signal-modal-list selected">
+                  {signalCandidates.length > 0 ? (
+                    signalCandidates.map(signal => renderSignalCandidate(signal))
+                  ) : (
+                    <div className="workshop-signal-empty">
+                      <strong>No signals added yet</strong>
+                      <span>Pick signals from the Signal Bank list on the left.</span>
+                    </div>
+                  )}
+                </div>
+              </aside>
+            </div>
+
+            <div className="workshop-signal-modal-footer">
+              <span>{signalCandidates.length} signals will appear in Environmental Scanning.</span>
+              <button type="button" className="btn btn-primary" onClick={() => setSignalPickerOpen(false)}>
+                Done
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
