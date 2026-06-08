@@ -4,6 +4,7 @@ const LOCAL_ORIGINS = [
 ];
 const RENDER_ORIGINS = [/^https:\/\/[a-z0-9-]+\.onrender\.com$/i];
 const VERCEL_ORIGINS = [/^https:\/\/[a-z0-9-]+\.vercel\.app$/i];
+const CLOUDFLARE_ORIGINS = [/^https:\/\/[a-z0-9-]+\.pages\.dev$/i];
 const NEXRESEARCH_ORIGINS = [
   'https://platform.nexresearch.net',
   'https://report.nexresearch.net',
@@ -23,5 +24,5 @@ export function getCorsOrigins() {
   ];
   const platformOrigins = process.env.RENDER === 'true' ? RENDER_ORIGINS : [];
 
-  return [...LOCAL_ORIGINS, ...platformOrigins, VERCEL_ORIGINS, ...NEXRESEARCH_ORIGINS, ...new Set(configuredOrigins)];
+  return [...LOCAL_ORIGINS, ...platformOrigins, ...VERCEL_ORIGINS, ...CLOUDFLARE_ORIGINS, ...NEXRESEARCH_ORIGINS, ...new Set(configuredOrigins)];
 }
