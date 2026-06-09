@@ -2504,6 +2504,7 @@ a.signal-bank-add-btn.btn-primary:hover {
 }
 
 .signal-search-suggestion-main strong {
+  max-width: 100%;
   overflow: hidden;
   color: #0f172a;
   font-size: 0.9rem;
@@ -2514,6 +2515,7 @@ a.signal-bank-add-btn.btn-primary:hover {
 }
 
 .signal-search-suggestion-main small {
+  max-width: 100%;
   overflow: hidden;
   color: #64748b;
   font-size: 0.76rem;
