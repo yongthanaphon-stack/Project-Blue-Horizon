@@ -1,1 +1,6 @@
 .superpowers/
+
+# Database dumps / backups (may contain real data and password hashes)
+dumps/
+*.sql
+*.dump
