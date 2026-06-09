@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans+Thai+Looped:wght@300;400;500;600;700&family=Noto+Sans+Thai+Looped:wght@300;400;500;600;700;800;900&family=Prompt:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --font-sans: 'Google Sans Flex', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-sans: 'Google Sans Flex', 'Noto Sans Thai Looped', 'IBM Plex Sans Thai Looped', 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Primary palette - Navy/Blue */
   --color-primary-900: #1a2332;
@@ -2785,6 +2785,9 @@ a.signal-bank-add-btn.btn-primary:hover {
   color: #111827;
   font-size: 1rem;
   line-height: 1.22;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .signal-bank-card p {
@@ -2793,6 +2796,9 @@ a.signal-bank-add-btn.btn-primary:hover {
   font-size: 0.813rem;
   line-height: 1.35;
   flex: 0 0 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .signal-bank-card-footer {
