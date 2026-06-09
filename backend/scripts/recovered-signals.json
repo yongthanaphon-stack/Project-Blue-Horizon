@@ -1,0 +1,553 @@
+[
+  {
+    "sourceId": "SIG001",
+    "name": "India AI Hub วางแผนจะตั้ง Center AI ใหญ่สุดในประเทศกำลังพัฒนา",
+    "shortDetails": "Modi Positions India as Global Hub for Affordable AI at New Delhi Summit - Bloomberg",
+    "description": "Modi Positions India as Global Hub for Affordable AI at New Delhi Summit - Bloomberg",
+    "referenceSource": "Modi Positions India as Global Hub for Affordable AI at New Delhi Summit - Bloomberg",
+    "pestelCategories": [
+      "POLITICAL",
+      "ECONOMIC",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Administration",
+      "Startups",
+      "Large Industry",
+      "VCs/Investors",
+      "NGOs",
+      "Public"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H1",
+    "geoDetail": "Regional"
+  },
+  {
+    "sourceId": "SIG002",
+    "name": "การเข้ามาแทนที่ของ AI  ต่อการจ้างงาน",
+    "shortDetails": "The Intelligent Co-Worker | World Economic Forum Annual Meeting 2026",
+    "description": "The Intelligent Co-Worker | World Economic Forum Annual Meeting 2026",
+    "referenceSource": "The Intelligent Co-Worker | World Economic Forum Annual Meeting 2026",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "NGOs",
+      "Public"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H1",
+    "geoDetail": null
+  },
+  {
+    "sourceId": "SIG003",
+    "name": "วิกฤตจ้างงานเด็กจบใหม่ อัตราว่างงานเยาวชนทั่วโลก ILO เผยอัตราว่างงานเยาวชนทั่วโลกเพิ่มแตะ 12.4%",
+    "shortDetails": "ILO เผย อัตราว่างงาน เยาวชนเพิ่มแตะ 12.4% ในปี 2025 มีวัยรุ่นทั่วโลก",
+    "description": "ILO เผย อัตราว่างงาน เยาวชนเพิ่มแตะ 12.4% ในปี 2025 มีวัยรุ่นทั่วโลก",
+    "referenceSource": "ILO เผย อัตราว่างงาน เยาวชนเพิ่มแตะ 12.4% ในปี 2025 มีวัยรุ่นทั่วโลก",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H1",
+    "geoDetail": null
+  },
+  {
+    "sourceId": "SIG004",
+    "name": "The Rise of Micro-Credential Economy (เศรษฐกิจที่ขับเคลื่อนด้วยใบรับรองทักษะย่อย)",
+    "shortDetails": "The Future of Jobs Report 2025 | World Economic Forum\n\nhttps://www.coursera.org/enterprise/resources/ebooks/micro-credentials-report-2025?msockid=33111eeb993561",
+    "description": "The Future of Jobs Report 2025 | World Economic Forum\n\nhttps://www.coursera.org/enterprise/resources/ebooks/micro-credentials-report-2025?msockid=33111eeb99356174005309e198f2603b",
+    "referenceSource": "The Future of Jobs Report 2025 | World Economic Forum\n\nhttps://www.coursera.org/enterprise/resources/ebooks/micro-credentials-report-2025?msockid=33111eeb99356174005309e198f2603b",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL",
+      "LEGAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "HEI",
+      "Startups"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H3",
+    "geoDetail": null
+  },
+  {
+    "sourceId": "SIG005",
+    "name": "Climate Resilience & Survival Curriculum (หลักสูตรความยืดหยุ่นและการเอาตัวรอดจากสภาพภูมิอากาศ)",
+    "shortDetails": "Greening curriculum guidance Teaching and learning for climate action.pdf",
+    "description": "Greening curriculum guidance Teaching and learning for climate action.pdf",
+    "referenceSource": "Greening curriculum guidance Teaching and learning for climate action.pdf",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL",
+      "ENVIRONMENTAL"
+    ],
+    "stakeholders": [],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H1",
+    "geoDetail": null
+  },
+  {
+    "sourceId": "SIG006",
+    "name": "The Rise of AI-Agent Co-Workers (การมาถึงของเพื่อนร่วมงาน AI)",
+    "shortDetails": "เมื่อ AI Agent ทำงานแทนคนได้จริง  คนไทยอาจตกงานถึง ‘ล้านคน’",
+    "description": "เมื่อ AI Agent ทำงานแทนคนได้จริง  คนไทยอาจตกงานถึง ‘ล้านคน’",
+    "referenceSource": "เมื่อ AI Agent ทำงานแทนคนได้จริง  คนไทยอาจตกงานถึง ‘ล้านคน’",
+    "pestelCategories": [
+      "ECONOMIC",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "HEI"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H2",
+    "geoDetail": "Global"
+  },
+  {
+    "sourceId": "SIG007",
+    "name": "Universal Green Skills Requirement (ทักษะสีเขียวภาคบังคับในทุกสายงาน)",
+    "shortDetails": "What are green skills? | UNIDO",
+    "description": "What are green skills? | UNIDO",
+    "referenceSource": "What are green skills? | UNIDO",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "ENVIRONMENTAL"
+    ],
+    "stakeholders": [],
+    "impactLevel": "REGION",
+    "timeHorizon": "H2",
+    "geoDetail": "สหภาพยุโรป (EU) และเขตเศรษฐกิจที่ผูกกับมาตรการ CBAM"
+  },
+  {
+    "sourceId": "SIG008",
+    "name": "The Silver Reskilling Boom (ยุคทองของการรีสกิลวัยวัยทำงานอายุ 40-60 ปี)",
+    "shortDetails": "เปลี่ยนโลกสูงวัยผ่านเลนส์ Silver Economy - TDRI: Thailand Development Research Institute",
+    "description": "เปลี่ยนโลกสูงวัยผ่านเลนส์ Silver Economy - TDRI: Thailand Development Research Institute",
+    "referenceSource": "เปลี่ยนโลกสูงวัยผ่านเลนส์ Silver Economy - TDRI: Thailand Development Research Institute",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "HEI",
+      "SMEs",
+      "Public"
+    ],
+    "impactLevel": "COUNTRY",
+    "timeHorizon": "H1",
+    "geoDetail": "กลุ่มประเทศ ประชากรอายุเยอะ ญี่ปุ่น, เกาหลีใต้, จีน, และไทย"
+  },
+  {
+    "sourceId": "SIG009",
+    "name": "Climate-Conditional R&D Funding (งบวิจัยที่ผูกมัดกับเป้าหมายสภาพภูมิอากาศ)",
+    "shortDetails": "R&D Opportunities for climate action | United Nations Development Programme",
+    "description": "R&D Opportunities for climate action | United Nations Development Programme",
+    "referenceSource": "R&D Opportunities for climate action | United Nations Development Programme",
+    "pestelCategories": [
+      "POLITICAL",
+      "ECONOMIC",
+      "ENVIRONMENTAL"
+    ],
+    "stakeholders": [
+      "HEI",
+      "Administration",
+      "Large Industry",
+      "VCs/Investors",
+      "NGOs",
+      "Public"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H1",
+    "geoDetail": "Global"
+  },
+  {
+    "sourceId": "SIG010",
+    "name": "ทางรอดของ SMEs ในโลกกติกาคาร์บอนต่ำ",
+    "shortDetails": "https://tdri.or.th/2026/02/green-finance-sme-article/",
+    "description": "https://tdri.or.th/2026/02/green-finance-sme-article/",
+    "referenceSource": "https://tdri.or.th/2026/02/green-finance-sme-article/",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "ENVIRONMENTAL",
+      "LEGAL"
+    ],
+    "stakeholders": [
+      "SMEs"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H1",
+    "geoDetail": null
+  },
+  {
+    "sourceId": "SIG011",
+    "name": "พัฒนาทุนมนุษย์ เรื่องด่วนที่ควรทำตั้งแต่เมื่อวาน",
+    "shortDetails": "https://tdri.or.th/2026/01/human-capital-developmen/",
+    "description": "https://tdri.or.th/2026/01/human-capital-developmen/",
+    "referenceSource": "https://tdri.or.th/2026/01/human-capital-developmen/",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "HEI",
+      "Public"
+    ],
+    "impactLevel": "COUNTRY",
+    "timeHorizon": "H1",
+    "geoDetail": "Thailand"
+  },
+  {
+    "sourceId": "SIG012",
+    "name": "นโยบายการค้า-การลงทุนใหม่เพื่อสร้างการเติบโต",
+    "shortDetails": "https://tdri.or.th/2026/01/ac-2025-session3/",
+    "description": "https://tdri.or.th/2026/01/ac-2025-session3/",
+    "referenceSource": "https://tdri.or.th/2026/01/ac-2025-session3/",
+    "pestelCategories": [
+      "POLITICAL",
+      "ECONOMIC",
+      "LEGAL"
+    ],
+    "stakeholders": [
+      "Administration",
+      "Large Industry",
+      "Regulators"
+    ],
+    "impactLevel": "COUNTRY",
+    "timeHorizon": "H1",
+    "geoDetail": "Thailand"
+  },
+  {
+    "sourceId": "SIG013",
+    "name": "การลงทุนผลักดันอุตสาหกรรมในประเทศของกองทุน Khazanah Nasional (กองทุนความมั่งคั่งแห่งชาติของมาเลเซีย) มาเลเซีย",
+    "shortDetails": "https://asia.nikkei.com/business/markets/trading-asia/malaysian-fund-khazanah-sharpens-domestic-focus-in-industrial-push",
+    "description": "https://asia.nikkei.com/business/markets/trading-asia/malaysian-fund-khazanah-sharpens-domestic-focus-in-industrial-push",
+    "referenceSource": "https://asia.nikkei.com/business/markets/trading-asia/malaysian-fund-khazanah-sharpens-domestic-focus-in-industrial-push",
+    "pestelCategories": [
+      "POLITICAL",
+      "ECONOMIC",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Administration",
+      "Large Industry",
+      "VCs/Investors"
+    ],
+    "impactLevel": "COUNTRY",
+    "timeHorizon": "H1",
+    "geoDetail": "Malaysia"
+  },
+  {
+    "sourceId": "SIG014",
+    "name": "Japan became a popular destination for Vietnamese university students",
+    "shortDetails": "https://newsletters.qs.com/eu-led-in-download-speeds-increased-student-flows-from-vietnam-into-japan-us-cities-experience-more-snowfall/",
+    "description": "https://newsletters.qs.com/eu-led-in-download-speeds-increased-student-flows-from-vietnam-into-japan-us-cities-experience-more-snowfall/",
+    "referenceSource": "https://newsletters.qs.com/eu-led-in-download-speeds-increased-student-flows-from-vietnam-into-japan-us-cities-experience-more-snowfall/",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "HEI",
+      "Public"
+    ],
+    "impactLevel": "REGION",
+    "timeHorizon": "H1",
+    "geoDetail": "Japan & Vietnam"
+  },
+  {
+    "sourceId": "SIG015",
+    "name": "QS Global Student Flows Malaysia",
+    "shortDetails": "https://newsletters.qs.com/malaysias-student-flows/",
+    "description": "https://newsletters.qs.com/malaysias-student-flows/",
+    "referenceSource": "https://newsletters.qs.com/malaysias-student-flows/",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL"
+    ],
+    "stakeholders": [
+      "HEI",
+      "Administration",
+      "Public"
+    ],
+    "impactLevel": "COUNTRY",
+    "timeHorizon": "H1",
+    "geoDetail": "Malaysia"
+  },
+  {
+    "sourceId": "SIG016",
+    "name": "3 Scenarios for International Education in 2030",
+    "shortDetails": "https://newsletters.qs.com/3-scenarios-for-international-education-in-2030-3/",
+    "description": "https://newsletters.qs.com/3-scenarios-for-international-education-in-2030-3/",
+    "referenceSource": "https://newsletters.qs.com/3-scenarios-for-international-education-in-2030-3/",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL",
+      "LEGAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "HEI",
+      "Regulators"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H3",
+    "geoDetail": "Global"
+  },
+  {
+    "sourceId": "SIG017",
+    "name": "ประเทศที่พัฒนาแล้วจะมีการผลิตบัณฑิตระดับปริญญาเอกที่มีคุณภาพสูง อย่างต่อเนื่องและผลิตในจำนวนมากต่อปี ส่วนสถิติของประเทศไทย เรามีผู้ที่จบระดับปริญญาเอกหรือกำลังศึกษาอยู่มีสัดส่วนเพียงประมาณ ร้อยละ 0.1 ของประชากรทั้งหมด ซึ่งถือว่าต่ำกว่าค่าเฉลี่ยโลกที่อยู่ระดับร้อยละ 1.2 ครับ คนไทยส่วนใหญ่จะถามว่า เรียนปริญญาเอกไปทำไม ไม่ได้อยากเป็นอาจารย์มหาวิทยาลัยไทย ซึ่งถูกต้องเลย เพราะในประเทศไทยไม่มีงานรองรับคนที่จบปริญญาเอก นอกจากการเป็นอาจารย์ในมหาวิทยาลัยไทย  แต่ที่มหาวิทยาลัยชั้นนำของต่างประเทศ เขาไม่มีปัญหาอะไรแบบนี้นะครับ ระบบการศึกษาของเขา “ครบวงจร” สมัยผมเรียนปริญญาเอกที่สหรัฐอเมริกา ผมมีเพื่อนที่เรียนด้วยกันจากหลายประเทศทั่วโลก แต่ละคนจบปริญญาตรี จบปริญญาโท มาจากมหาวิทยาลัย เช่น Tsinghua University, National University of Singapore, Indian Institute of Technology, Technion, Oxford University, Carnegie Mellon University, University of California at Berkeley, MIT, Brown University, และ Harvard เรียกว่า แต่ละคนเป็นคนเก่ง ๆ มาจากทั่วโลก เพื่อนที่จบจาก NUS เคยเล่าให้ผมฟังว่า เขามาเรียนที่ Tufts University เพราะได้รับข้อเสนอจากมหาวิทยาลัยที่ให้ทั้งเงินเดือนและค่าเล่าเรียนฟรีจนจบปริญญาเอก ค่าเล่าเรียนก็ไม่ได้ถูกเหมือนบ้านเรา เงินเดือนที่ให้ก็อาศัยอยู่ได้ในเมืองบอสตันอย่างไม่ลำบาก นักศึกษาปริญญาเอกที่โน่น เปรียบเสมือนถูกจ้างมาให้ทำวิจัยให้อาจารย์ ในขณะที่ นักศึกษาก็ได้ประโยชน์ เพราะได้รับความรู้และทักษะในการทำวิจัยระดับโลก เป็นการแลกเปลี่ยน อยู่ในสถานะที่เป็น win-win ทั้งสองฝ่าย ไม่มีใครถามว่า เรียนปริญญาเอกไปทำไม มีแต่เรียนจบไปแล้ว ได้ไปทำงานเป็นนักวิจัยที่บริษัท เช่น Google Microsoft Open AI มีแต่เรียนจบไปแล้ว ไปเป็นอาจารย์ที่มหาวิทยาลัยดี ๆ ของต่างประเทศ ทุกคนจบปริญญาเอกแล้ว ได้งานดี ๆ กันหมด หลายคนก็ใช้ทักษะในการสร้างความรู้ใหม่ที่เรียนมาในการตั้งบริษัท deep tech startups ของตนเองเลยก็มี การผลิตบัณฑิตปริญญาเอกบ้านเราไม่มีอะไรแบบนี้นะครับ เราไม่มีกระบวนการในการ recruitment นักศึกษาระดับ crème de la crème จากทั่วโลกให้มาเรียนกับเรา ยังไม่สามารถส่งออกบัณฑิตปริญญาเอกได้ ยังไม่มีงานรองรับที่หลากหลาย ยังไม่สามารถมีบริษัท deep tech startups ของเราเองได้ พูดสั้น ๆ คือ เรามี “ไม่ครบวงจร” ครับ ขอฝากการศึกษาระดับปริญญาเอกเอาไว้ให้กับรัฐมนตรีกระทรวงอุดม ฯ ท่านใหม่ด้วย เราจะหลุดจากกับดักรายได้ปานกลางไปไม่ได้เลย หากการศึกษาระดับปริญญาเอกยังไม่เปลี่ยนให้ครบวงจรครับ",
+    "shortDetails": "https://www.facebook.com/share/p/1QZpYsNyzF/",
+    "description": "https://www.facebook.com/share/p/1QZpYsNyzF/",
+    "referenceSource": "https://www.facebook.com/share/p/1QZpYsNyzF/",
+    "pestelCategories": [
+      "POLITICAL",
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "HEI",
+      "Startups",
+      "Large Industry"
+    ],
+    "impactLevel": "COUNTRY",
+    "timeHorizon": "H2",
+    "geoDetail": "Thailand (vs Global)"
+  },
+  {
+    "sourceId": "SIG018",
+    "name": "Agents, robots, and us: Skill partnerships in the age of AI",
+    "shortDetails": "https://www.mckinsey.com/mgi/our-research/agents-robots-and-us-skill-partnerships-in-the-age-of-ai",
+    "description": "https://www.mckinsey.com/mgi/our-research/agents-robots-and-us-skill-partnerships-in-the-age-of-ai",
+    "referenceSource": "https://www.mckinsey.com/mgi/our-research/agents-robots-and-us-skill-partnerships-in-the-age-of-ai",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Startups",
+      "Large Industry",
+      "Public"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H2",
+    "geoDetail": "Global"
+  },
+  {
+    "sourceId": "SIG019",
+    "name": "THE 2028 GLOBAL INTELLIGENCE CRISIS",
+    "shortDetails": "https://www.citriniresearch.com/p/2028gic",
+    "description": "https://www.citriniresearch.com/p/2028gic",
+    "referenceSource": "https://www.citriniresearch.com/p/2028gic",
+    "pestelCategories": [
+      "POLITICAL",
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "VCs/Investors",
+      "Regulators",
+      "Public"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H3",
+    "geoDetail": "Global"
+  },
+  {
+    "sourceId": "SIG020",
+    "name": "Accenture ‘links staff promotions to use of AI tools’",
+    "shortDetails": "https://www.theguardian.com/accenture/2026/feb/19/accenture-links-staff-promotions-to-use-of-ai-tools",
+    "description": "https://www.theguardian.com/accenture/2026/feb/19/accenture-links-staff-promotions-to-use-of-ai-tools",
+    "referenceSource": "https://www.theguardian.com/accenture/2026/feb/19/accenture-links-staff-promotions-to-use-of-ai-tools",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Large Industry",
+      "Public"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H1",
+    "geoDetail": "Corporate"
+  },
+  {
+    "sourceId": "SIG021",
+    "name": "ภาคอสังหาริมทรัพย์ ขับเคลื่อน Smart city ตอบโจทย์คุณภาพชีวิตประชากรเมือง",
+    "shortDetails": "https://www.scbeic.com/th/detail/product/SmartCity-160226",
+    "description": "https://www.scbeic.com/th/detail/product/SmartCity-160226",
+    "referenceSource": "https://www.scbeic.com/th/detail/product/SmartCity-160226",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL",
+      "ENVIRONMENTAL"
+    ],
+    "stakeholders": [
+      "SMEs",
+      "Large Industry",
+      "Public"
+    ],
+    "impactLevel": "COUNTRY",
+    "timeHorizon": "H2",
+    "geoDetail": "Local / Urban Area"
+  },
+  {
+    "sourceId": "SIG022",
+    "name": "ทิศทางการลงทุนไทย ในยุคที่การลงทุนโลกไม่เหมือนเดิม",
+    "shortDetails": "https://www.scbeic.com/th/detail/product/FDI-211125",
+    "description": "https://www.scbeic.com/th/detail/product/FDI-211125",
+    "referenceSource": "https://www.scbeic.com/th/detail/product/FDI-211125",
+    "pestelCategories": [
+      "POLITICAL",
+      "ECONOMIC",
+      "TECHNOLOGICAL",
+      "LEGAL"
+    ],
+    "stakeholders": [
+      "Large Industry",
+      "VCs/Investors"
+    ],
+    "impactLevel": "COUNTRY",
+    "timeHorizon": "H1",
+    "geoDetail": "Thailand"
+  },
+  {
+    "sourceId": "SIG023",
+    "name": "ทิศทางเศรษฐกิจไทย ปี 2569 \" และ Special Topic : Rare Earth กับ Geopolitics",
+    "shortDetails": "https://www.kasikornresearch.com/th/analysis/k-social-media/Pages/Press-Q4-2568-FB-2025-12-09.aspx",
+    "description": "https://www.kasikornresearch.com/th/analysis/k-social-media/Pages/Press-Q4-2568-FB-2025-12-09.aspx",
+    "referenceSource": "https://www.kasikornresearch.com/th/analysis/k-social-media/Pages/Press-Q4-2568-FB-2025-12-09.aspx",
+    "pestelCategories": [
+      "POLITICAL",
+      "ECONOMIC",
+      "TECHNOLOGICAL",
+      "ENVIRONMENTAL"
+    ],
+    "stakeholders": [
+      "Large Industry",
+      "VCs/Investors",
+      "Regulators"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H2",
+    "geoDetail": "Global"
+  },
+  {
+    "sourceId": "SIG024",
+    "name": "Anthropic AI ใหม่ทำตลาดหุ้นร่วง 2 แสนล้าน รู้จัก Claude Code & Cowork | Executive Espresso EP.591",
+    "shortDetails": "https://youtu.be/y1-FyGD237M?si=AU-JJrIvYLLMVswS",
+    "description": "https://youtu.be/y1-FyGD237M?si=AU-JJrIvYLLMVswS",
+    "referenceSource": "https://youtu.be/y1-FyGD237M?si=AU-JJrIvYLLMVswS",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Administration",
+      "Startups",
+      "SMEs",
+      "Large Industry",
+      "VCs/Investors",
+      "Public"
+    ],
+    "impactLevel": "REGION",
+    "timeHorizon": "H2",
+    "geoDetail": null
+  },
+  {
+    "sourceId": "SIG025",
+    "name": "สถานการณ์ผลกระทบจากสงคราม ตะวันออกกลางที่ส่งผลต่อราคาน้ำมัน และเส้นทางเดินเรือขนส่งน้ำมัน ที่กระทบต่อความมั่นคงและเศรษฐกิจ",
+    "shortDetails": "https://theactive.thaipbs.or.th/news/global-20260303\nhttps://www.nytimes.com/2026/03/04/business/media/iran-state-tv-social-media-war-ai.html",
+    "description": "https://theactive.thaipbs.or.th/news/global-20260303\nhttps://www.nytimes.com/2026/03/04/business/media/iran-state-tv-social-media-war-ai.html",
+    "referenceSource": "https://theactive.thaipbs.or.th/news/global-20260303\nhttps://www.nytimes.com/2026/03/04/business/media/iran-state-tv-social-media-war-ai.html",
+    "pestelCategories": [
+      "ECONOMIC"
+    ],
+    "stakeholders": [
+      "Administration",
+      "Startups",
+      "SMEs",
+      "Large Industry",
+      "VCs/Investors",
+      "Regulators",
+      "NGOs",
+      "Public"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H1",
+    "geoDetail": "Global"
+  },
+  {
+    "sourceId": "SIG026",
+    "name": "วิกฤตความเชื่อมั่นต่อระบบอุดมศึกษาและช่องว่างทางทักษะในยุค AI (The Decline of the Traditional University Degree & the Rise of Skills-Based Learning)",
+    "shortDetails": "https://newsletters.qs.com/are-skills-gaps-and-student-scepticism-two-sides-of-the-same-problem/",
+    "description": "https://newsletters.qs.com/are-skills-gaps-and-student-scepticism-two-sides-of-the-same-problem/",
+    "referenceSource": "https://newsletters.qs.com/are-skills-gaps-and-student-scepticism-two-sides-of-the-same-problem/",
+    "pestelCategories": [
+      "SOCIAL",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "HEI"
+    ],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H2",
+    "geoDetail": "Global"
+  },
+  {
+    "sourceId": "SIG027",
+    "name": "จุฬาฯ เปิดตัว “Chula XL” วิทยาลัยใหม่ ขับเคลื่อนการเรียนรู้ตลอดชีวิต มุ่งสู่การเป็นมหาวิทยาลัยเพื่อประชาชน",
+    "shortDetails": "https://www.chula.ac.th/news/279154/",
+    "description": "https://www.chula.ac.th/news/279154/",
+    "referenceSource": "https://www.chula.ac.th/news/279154/",
+    "pestelCategories": [
+      "ECONOMIC",
+      "SOCIAL",
+      "TECHNOLOGICAL"
+    ],
+    "stakeholders": [
+      "Academia",
+      "HEI",
+      "Public"
+    ],
+    "impactLevel": "COUNTRY",
+    "timeHorizon": "H2",
+    "geoDetail": "Thailand"
+  },
+  {
+    "sourceId": "SIG028",
+    "name": "ภาคีไตรมิตร “จุฬาฯ-มช.-มหิดล” ผนึกกำลังขับเคลื่อนอุดมศึกษาไทยภายใต้แนวคิด MC² เพื่อสังคมไทยที่เติบโต โปร่งใส และยั่งยืน",
+    "shortDetails": "https://www.chula.ac.th/news/283114/",
+    "description": "https://www.chula.ac.th/news/283114/",
+    "referenceSource": "https://www.chula.ac.th/news/283114/",
+    "pestelCategories": [],
+    "stakeholders": [],
+    "impactLevel": "GLOBAL",
+    "timeHorizon": "H1",
+    "geoDetail": null
+  }
+]
